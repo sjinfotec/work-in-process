@@ -11,12 +11,14 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Models\Calendar;
+use App\Models\ProcessLog;
 
 class ProcessController extends Controller
 {
 
     protected $table = 'process_details';
     protected $table_process_date = 'process_date';
+    protected $table_process_log = 'process_log';
 
     private $id;
     private $product_code;          // 伝票番号
@@ -357,6 +359,9 @@ class ProcessController extends Controller
 
         $result_details = $this->SearchProcessDetails($request);
         $result_date = $this->SearchProcessDate($request);
+        $processlog_data = new ProcessLog();	// インスタンス作成
+        $result_logsearch = $processlog_data->LogSearch($request);
+
         //var_dump($result_details['result'][0]); 
         //echo $av = $result_details['datacount'] ?: "なし<br>\n";
         //echo "<br><br>\n";
@@ -391,6 +396,7 @@ class ProcessController extends Controller
                 'e_message' => $e_message,
                 'result' => $result_details,
                 'result_date' => $result_date,
+                'result_log' => $result_logsearch,
                 'wd_result' => '',
                 'html_cal_main' => $html_cal,
                 'select_html' => $select_html,
@@ -668,6 +674,7 @@ class ProcessController extends Controller
                 ->get();
                 $count = $data->count();
 
+
                     if($count > 0){
                         //$r_after_due_date = $result[0]->after_due_date;
                         //$html_after_due_date = !empty($r_after_due_date) ? date('n月j日', strtotime($r_after_due_date)) : "";
@@ -684,6 +691,34 @@ class ProcessController extends Controller
                     $e_message .= " 日報に登録なし <> count = ".$count." <> date = ".$html_after_due_date;
                     */
                     $result_msg = "nothing";
+
+                        if($department == 8) {
+                            $result[] = [
+                                'id' => '1001',
+                                'name' => 'チェック',
+                                'department_id' => '8'
+                                ];
+                            $result[] = [
+                                'id' => '1002',
+                                'name' => '箱入荷',
+                                'department_id' => '8'
+                                ];
+                            $result_msg = "OK";
+                        }
+                        if($department == 10) {
+                            $result[] = [
+                                'id' => '1011',
+                                'name' => '横持',
+                                'department_id' => '10'
+                                ];
+                            $result[] = [
+                                'id' => '1012',
+                                'name' => '出荷',
+                                'department_id' => '10'
+                                ];
+                            $result_msg = "OK";
+                        }
+
 
                     }
 
@@ -947,23 +982,15 @@ class ProcessController extends Controller
     {
 
         $details = isset($_POST['details']) ? $_POST['details'] : [];
-        /*
-        foreach($details AS $key => $val) {
-            $name = $val;
-
-        }
-        */
 
         $s_product_code = !empty($_POST["s_product_code"]) ? $_POST['s_product_code'] : "";
         $product_code = !empty($_POST["product_code"]) ? $_POST['product_code'] : "";
-        $after_due_date = !empty($_POST["after_due_date"]) ? $_POST['after_due_date'] : "";
         $customer = !empty($_POST["customer"]) ? $_POST['customer'] : "";
         $product_name = !empty($_POST["product_name"]) ? $_POST['product_name'] : "";
         $end_user = !empty($_POST["end_user"]) ? $_POST['end_user'] : "";
         $quantity = !empty($_POST["quantity"]) ? $_POST['quantity'] : "";
         $comment = !empty($_POST["comment"]) ? $_POST['comment'] : "";
-        $mode = !empty($_POST["mode"]) ? $_POST['mode'] : "";
-        $motion = !empty($_POST["motion"]) ? $_POST['motion'] : "";
+        $after_due_date = !empty($_POST["after_due_date"]) ? $_POST['after_due_date'] : "";
         $action_msg = "";
         $result = "";
         $result_date = "";
@@ -983,48 +1010,70 @@ class ProcessController extends Controller
         $this->process_name = !empty($_POST['process_name']) ? $_POST['process_name'] : "";
         $this->status = isset($_POST['status']) ? $_POST['status'] : "";
 
-        $mode = isset($_POST['mode']) ? $_POST['mode'] : "";
-        $upkind = isset($_POST['upkind']) ? $_POST['upkind'] : "";
-        $details = isset($_POST['details']) ? $_POST['details'] : [];
-
         $reqarr = $request->only([
             'work_name', 
             'departments_name'
         ]);
+        $mode = $request->mode;
+        $submode = $request->submode;
+        $motion = $request->motion;
+        $params = $request->only([
+            'product_code',
+            'departments_name',
+            'departments_code',
+            'work_name',
+            'work_code',
+            'process_name',
+            'status',
+        ]);
+
+        //$gethost = gethostname();
+        //$gethost = gethostbyaddr($_SERVER['REMOTE_ADDR']);
+        $ipaddr = $_SERVER["REMOTE_ADDR"];
 
 
         try {
             $re_data = [];
             $systemdate = Carbon::now();
-            if($upkind == 3) {
-            //$this->company_id = DB::table($this->table)->max('company_id') + 1;
-            //$this->product_id = DB::table($this->table)->max('product_id') + 1;
-            //$this->order_info = 'a';
-            //$this->created_user = 'system';
+
+
+/*
+            $data = DB::table($this->table)
+            ->select(
+                'work_date',
+                'product_code',
+                'departments_name',
+                'departments_code',
+                'work_name',
+                'work_code',
+                'process_name',
+                'status'
+            );
+            $data->where('product_code', $s_product_code);
+            $result = $data
+            ->get();
+            $datacount = $data->count();
+
+
+
+            if($datacount > 0) {
+                $f_work_date = $result[0]->work_date;
+                $html_f_work_date = !empty($f_work_date) ? date('n月j日', strtotime($f_work_date)) : "";
+                $result_msg = "OK date";
+                $e_message .= " 伝票番号 = ".$result[0]->product_code." <> count = ".$datacount." <> date = ".$html_f_work_date;
+
             }
-            if($upkind == 2) {
-                //$this->product_id = DB::table($this->table)->max('product_id') + 1;
-                //$this->order_info = 'a';
-                //$this->created_user = 'system';
+
+            
+*/
+            if(isset($s_product_code)) {
+                $pddata = DB::table($this->table)
+                ->where('product_code', $s_product_code)
+                ->pluck('status');
+
+                //pluck('name', 'id'); //key-value の形での取得
+                //echo "\n<br>\nstatus = ".$pddata[0]."<br>\n";
             }
-            //$this->now_inventory = isset($this->now_inventory) ? $this->now_inventory : "";
-            //$this->nbox = isset($this->nbox) ? $this->nbox : "";
-
-            /*
-            //例：user_idが1001かつemailがtest@test.comを検索し、見つかった場合は、nameをnishiyamaへ、ageを33にupdateします。
-                        DB::table($this->table_process_date)
-                        ->updateOrInsert(
-                            ['user_id' => 1001, 'email' => 'test@test.com'],
-                            ['name' => 'nishiyama', 'age' => 33]
-                        );
-
-
-'created_at' => $systemdate,
-
-            */
-
-
-
 
             $work_date_arr = $request->only(['work_date']);
             $str = "";
@@ -1035,18 +1084,16 @@ class ProcessController extends Controller
                     foreach($wdarr AS $wdkey => $val) {
                         $str .= "wdkey=".$wdkey.":val=".$val;
     
-                        //if($this->work_code == 'DEL') {
                         if($mode == 'delete') {
-                            $count = DB::table($this->table_process_date)
+                            $updateresult = DB::table($this->table_process_date)
                             ->where('work_date', $val)
                             ->where('product_code', $s_product_code)
-                            ->where('departments_code', $this->departments_code)
-                            ->where('work_code', $this->work_code)
+                            ->where('departments_code', $params['departments_code'])
+                            ->where('work_code', $params['work_code'])
                             ->delete();
-                            
-
                 
                         }
+                        /*
                         elseif($mode == 'status_update') {
                             $updateresult = DB::table($this->table_process_date)
                             ->where('work_date', $val)
@@ -1056,6 +1103,8 @@ class ProcessController extends Controller
                             ->update(
                                 [
                                     'status' => '完了',
+                                    'updated_user' => $ipaddr,
+                                    'updated_at' => $systemdate
                                 ]
                             );
 
@@ -1063,10 +1112,18 @@ class ProcessController extends Controller
 
                 
                         }
+                        */
                         else {
+
+                            $chkupdate = DB::table($this->table_process_date)
+                            ->where('work_date', $val)
+                            ->where('product_code', $s_product_code)
+                            ->where('departments_code', $params['departments_code'])
+                            ->where('work_code', $params['work_code'])
+                            ->exists();
             
-
-
+                            $action_msg .= "act--".$chkupdate." @ ";
+                            /*
                             $updateresult = DB::table($this->table_process_date)
                             ->updateOrInsert(
                                 [
@@ -1079,26 +1136,69 @@ class ProcessController extends Controller
                                     'departments_name' => $this->departments_name, 
                                     'work_name' => $this->work_name, 
                                     'process_name' => $this->process_name, 
-                                    'created_user' => 'system',
-                                    'updated_at' => $systemdate
+                                    'created_user' => $ipaddr,
+                                    'created_at' => $systemdate
                 
 
                                 ]
                             );
-                            
+                            */
+                            //insert(['name'=>'山田太郎','email'=>'yamada@test.com'])
+                            if(empty($chkupdate))  {
+                                $updateresult = DB::table($this->table_process_date)
+                                ->insert(
+                                    [
+                                        'work_date' => $val,
+                                        'product_code' => $s_product_code, 
+                                        'departments_code' => $params['departments_code'],
+                                        'work_code' => $params['work_code'],
+                                        'departments_name' => $params['departments_name'], 
+                                        'work_name' => $params['work_name'], 
+                                        'process_name' => '', 
+                                        'created_user' => $ipaddr,
+                                        'created_at' => $systemdate
+                                    ]
+                                );
+                            }     
+
+
                         }
 
+                        $insertdata[] = array(
+                            'work_date' => $val,
+                            'product_code' => $s_product_code,
+                            'motion' => $motion,
+                            'departments_name' => $params['departments_name'], 
+                            'departments_code' => $params['departments_code'],
+                            'work_name' => $params['work_name'], 
+                            'work_code' => $params['work_code'],
+                            'process_name' => '', 
+                            'created_user' => $ipaddr,
+                            'created_at' => $systemdate
+                        );
+
                     }
+
+                    
+
+
                 }
             }
 
-       
-            
+            if(isset($updateresult)) {
+                //$updateresult = 'yes';
+                if($pddata == 'rec') {
+                    $logresult = DB::table($this->table_process_log)->insert($insertdata); 
+                }
+            }
+            else {
+                //$updateresult = 'no';
+            }
 
-            //$re_data['id'] = $id;
+
+
+       
             //DB::commit();
-            
-            //return $re_data;
             $wd_result = $this->workdateSearch($request);
 
         }catch(\PDOException $pe){
@@ -1113,7 +1213,7 @@ class ProcessController extends Controller
 
         
         
-        $e_message = "登録 ： ".$this->product_code." ＆ ".$this->product_name."　納期 ： ".$this->after_due_date;
+        $e_message = "登録 ： ".$product_code." ＆ ".$product_name."　納期 ： ".$after_due_date;
         $result_msg = "OK";
 
         /*
@@ -1146,16 +1246,16 @@ class ProcessController extends Controller
         return view('process', [
             's_product_code' => $s_product_code,
             'product_code' => $product_code,
-            'after_due_date' => $after_due_date,
             'customer' => $customer,
             'product_name' => $product_name,
             'end_user' => $end_user,
             'quantity' => $quantity,
             'comment' => $comment,
+            'after_due_date' => $after_due_date,
             'mode' => $mode,
             'action_msg' => $action_msg,
             'e_message' => $e_message,
-            'result' => $result,
+            'result' => $updateresult,
             'result_date' => $result_date,
             'wd_result' => $wd_result,
             'html_cal_main' => $html_cal,
