@@ -612,6 +612,42 @@ header button {width:auto;}
   border:2px solid #EC3;
 }
 
+#confirm_area {
+  display: flex;
+  gap: 0 10px;
+}
+#confirm_area .result_log {
+  flex: 1;
+  border: 2px solid #FF0000;
+}
+#confirm_area table {
+  border-collapse: separate;
+  border-spacing:0;
+  border-left:1px solid #888888;
+  border-top:1px solid #888888;
+  font-size:1.2rem;
+  width: 100%;
+
+}
+#confirm_area th {
+  /* 縦スクロール時に固定する */
+  position: -webkit-sticky;
+  position: sticky;
+  top: 73px;
+  /* tbody内のセルより手前に表示する */
+  z-index: 1;
+  white-space: nowrap;
+  background:#ee9955;
+  border-right:1px solid #888888;
+  padding:5px 5px;
+  width: 12em;
+}
+#confirm_area td{
+  padding:0.75rem;
+  border-right:1px solid #888888;
+  border-bottom:1px solid #888888;
+
+}
 
 
 #form_cnt {
@@ -697,7 +733,7 @@ header button {width:auto;}
   /*position:  relative;*/
   position: absolute;
   width:  22px;
-  height:  530px;
+  height:  616px;
   background-color: #f4c836;
   /*border-radius:  50%;*/
   line-height: 3px;
