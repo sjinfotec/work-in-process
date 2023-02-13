@@ -31,9 +31,13 @@ Route::get('/', function () {
 //ログインが必要な場合は、 ->middleware('auth') を追加する
 //Route::get('/', [HomeController::class,'index'])->middleware('auth');
 
-Route::get('/', [HomeController::class,'index']);
+//Route::get('/', [HomeController::class,'index']);
+Route::get('/', [ProcessController::class,'index']);
 //Route::post('/home', [HomeController::class,'index'])->name('login');
+// マニュアル
 Route::get('/home', [HomeController::class,'index']);
+
+// 工程登録
 Route::get('/regi', [RegisterController::class,'getRequestFunc']);
 Route::post('/regi', [RegisterController::class,'postRequestFunc']);
 Route::post('/regi/search', [RegisterController::class,'searchData']);
@@ -50,6 +54,11 @@ Route::post('/process/updates', [ProcessController::class,'fix']);
 Route::post('/process/insert', [ProcessController::class,'insertData']);
 Route::post('/process/search', [ProcessController::class,'postSearch']);
 Route::post('/process/wdget', [ProcessController::class,'workDate']);   // 部署の作業日取得
+Route::any('/process/{getpost}', function ($getpost) {
+    // {}がワイルドカード　なんでも入る。　$getpost 引数を設定して変数として使える
+    return redirect('/process');
+});
+
 
 // 閲覧
 Route::get('/view', [ViewController::class,'index']);

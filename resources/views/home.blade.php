@@ -55,13 +55,13 @@ if(isset($result)) {
           <ul class="lst1">
           <li>工程（伝票）を登録
             <ol class="lst2">
-            <li>メニュー欄より『伝票番号登録』をクリック、登録したい伝票番号を入力し、『検索』をクリックすると、登録可能な製品が表示されます</li>
-            <li>登録したい伝票番号列の左端にある『登録』をクリックし、工程を登録します</li>
+            <li>メニュー欄より『伝票番号登録』をクリック、登録したい伝票番号を入力し、『検索』をクリックすると、登録可能な製品が表示されます<div class="manualimg"><img src="{{ asset('images/manual/1_1.jpg') }}"></div></li>
+            <li>登録したい伝票番号列の左端にある『登録』をクリックし、工程を登録します<div class="manualimg"><img src="{{ asset('images/manual/1_2.jpg') }}"></div></li>
             </ol>
           </li>
           <li>工程を作成（編集）する　＞その１
             <ol class="lst2">
-            <li>メニュー欄より『作業工程作成』をクリック、作成・編集したい伝票番号を入力し、『検索』をクリック、検索されると編集画面に変わります</li>
+            <li>メニュー欄より『作業工程作成』をクリック、作成・編集したい伝票番号を入力し、『検索』をクリック、検索されると編集画面に変わります<div class="manualimg"><img src="{{ asset('images/manual/2_1.jpg') }}"></div></li>
             <li>製品情報の編集をするには、『編集』をクリックすると入力可能な表示に変わります</li>
             <li>入稿日や下版日を入力し、追加情報があればコメント欄に記入し『登録』をクリックして編集完了</li>
             <li>編集を登録せずに破棄する場合は『戻る』をクリック</li>
@@ -73,38 +73,50 @@ if(isset($result)) {
             <li>その１から引き続き</li>
             <li>カレンダー下部に各部署のボタンがあり、登録したい部署をクリック</li>
             <li>該当部署の作業ボタンが表示され登録する作業ボタンをクリック</li>
-            <li>ボタンの上部にチェックボタンが表示され、作業日をクリックしていきます（複数日程の同時登録可能）</li>
+            <li>ボタンの上部にチェックボタンが表示され、作業日をクリックしていきます（複数日程の同時登録可能）<div class="manualimg"><img src="{{ asset('images/manual/3_3.jpg') }}"></div></li>
             <li>登録する場合は『登録』をクリックします</li>
             <li>登録を削除する場合は『削除』をクリックします<br>チェックマークが付いている日が削除されます</li>
+            </ol>
+          </li>
+          <li>工程を作成（部署の作業登録）する　＞その３
+            <ol class="lst2">
+            <li>その２から引き続き</li>
+            <li>初めての作業登録時には『確定登録』ボタンが、以降の作業追加時や削除時には『再確定』ボタンが表示されます<div class="manualimg"><img src="{{ asset('images/manual/4_1.jpg') }}"></div></li>
+            <li>作業の登録をしただけでは確定されておらず、各部署が登録を済ませた後にいずれかの確定ボタンを押します</li>
+            <li>『確定登録』『再確定』を押した後の作業追加や削除が記録されます<div class="manualimg"><img src="{{ asset('images/manual/4_4.jpg') }}"></div></li>
+            <li>再度、『再確定』を押すことで記録が停止し、表示が「工程確定済み」に変わります<div class="manualimg"><img src="{{ asset('images/manual/4_6.jpg') }}"></div></li>
             </ol>
           </li>
           <li>工程を見る
             <ol class="lst2">
             <li>メニュー欄より『作業工程閲覧』をクリック</li>
             <li>伝票番号で検索、その他の項目で検索ができます<br>『検索』をクリックし、検索にヒットすると該当工程が一覧表示させる</li>
-            <li>『表示』をクリックすることで部署工程のカレンダーも表示されます</li>
+            <li>『表示』を押すことで作業工程が表示されます</li>
             <li>作業を終えた工程は、■をクリックすると■にマークが付きます</li>
-            <li>カレンダーの日付クリックすると該当日の作業一覧が表示されます</li>
+            <li>カレンダーの日付を押すと該当日の作業一覧が表示されます</li>
             </ol>
           </li>
           </ul>
     </div>
 
-	<div id="version_cnt"><a @click="viewBtn(2)">version 1.0</a></div>
-	<div id="tbl_2">
-		<table>
-		<thead>
-			<tr>
-			<th>version</th>
-			<th>date</th>
-			<th>overview</th>
-			</tr>
-		</thead>
-		<tbody>
-			<tr><td>1.0</td><td>2023/01/18</td><td>初版</td></tr>
-		</tbody>
-		</table>
-	
+	<div id="version_cnt"><a onClick="viewBtn(2)">version 1.0</a></div>
+	<div id="view_switch">
+		<div id="tbl_2">
+			<table>
+			<thead>
+				<tr>
+				<th>version</th>
+				<th>date</th>
+				<th>overview</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr><td>1.0</td><td>2023/02/28</td><td>実運用版</td></tr>
+				<tr><td>0.1</td><td>2023/01/18</td><td>テスト版</td></tr>
+			</tbody>
+			</table>
+		
+		</div>
 	</div>
 
 
@@ -232,8 +244,19 @@ function UPDATEcollect() {
 
 
 
-
-
+var i = 2;
+function viewBtn(go) {
+	var amari = i % go;
+	console.log("viewBtn amari = " + amari);
+	if(amari == 0){
+		//console.log("viewBtn amari 0");
+		document.getElementById("view_switch").style.display = 'block';
+	} else {
+		document.getElementById("view_switch").style.display = 'none';
+	}
+	i = i + 1;
+	console.log("viewBtn i = " + i);
+}
 
 	function unChecked(cl) {
 		let boxes = document.querySelectorAll(cl);
