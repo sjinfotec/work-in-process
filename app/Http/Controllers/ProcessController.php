@@ -676,6 +676,49 @@ class ProcessController extends Controller
 
 
                     if($count > 0){
+                        if($department == 3) {
+                            //削除実行
+                            /*
+                            foreach ($result as $key => $val) {
+                                if($key <= 2){
+                                    unset($result[$key]);   //削除実行
+                                }
+                            }
+                            //indexを詰める
+                            $result = array_values($result);
+                            */
+                            //その他の手法
+                            //$result = array_diff($target, array('c', 'e'));
+                            //$result = array_splice($result, 1, 2);
+                            $result = Array();
+                            $result[0] = [
+                                'id' => '44',
+                                'name' => 'PC',
+                                'department_id' => '3'
+                                ];
+                            $result[1] = [
+                                'id' => '1031',
+                                'name' => '作成',
+                                'department_id' => '3'
+                                ];
+                            $result[] = [
+                                'id' => '61',
+                                'name' => '打ち合わせ',
+                                'department_id' => '3'
+                                ];
+                                
+                        }
+                        if($department == 6) {
+                            $result[] = [
+                                'id' => '1021',
+                                'name' => '仕分',
+                                'department_id' => '6'
+                                ];
+                        }
+
+
+
+
                         //$r_after_due_date = $result[0]->after_due_date;
                         //$html_after_due_date = !empty($r_after_due_date) ? date('n月j日', strtotime($r_after_due_date)) : "";
                         //$e_message .= " 既に登録されています <> count = ".$count." <> date = ".$html_after_due_date;
@@ -703,6 +746,16 @@ class ProcessController extends Controller
                                 'name' => '箱入荷',
                                 'department_id' => '8'
                                 ];
+                            $result[] = [
+                                'id' => '1003',
+                                'name' => 'ラベル',
+                                'department_id' => '8'
+                                ];
+                            $result[] = [
+                                'id' => '1004',
+                                'name' => '伝票出力済',
+                                'department_id' => '8'
+                                ];
                             $result_msg = "OK";
                         }
                         if($department == 10) {
@@ -715,6 +768,29 @@ class ProcessController extends Controller
                                 'id' => '1012',
                                 'name' => '出荷',
                                 'department_id' => '10'
+                                ];
+                            $result_msg = "OK";
+                        }
+                        if($department == 13) {
+                            $result[] = [
+                                'id' => '41',
+                                'name' => '東レ',
+                                'department_id' => '13'
+                                ];
+                            $result[] = [
+                                'id' => '42',
+                                'name' => 'ドットプリンタ',
+                                'department_id' => '13'
+                                ];
+                            $result[] = [
+                                'id' => '43',
+                                'name' => 'オンデマンド',
+                                'department_id' => '13'
+                                ];
+                            $result[] = [
+                                'id' => '61',
+                                'name' => '打ち合わせ',
+                                'department_id' => '13'
                                 ];
                             $result_msg = "OK";
                         }
