@@ -44,6 +44,7 @@ class WorkView extends Model
     private $work_name;             // 作業
     private $work_code;             // 作業コード
     private $process_name;          // 工程名
+    private $performance;           // 作業実績
 
 
     use HasFactory;
@@ -321,6 +322,7 @@ class WorkView extends Model
             if(isset($s_product_code)) {
                 $data = DB::table($this->table_process_date)
                 ->select(
+                    'id',
                     'work_date',
                     'product_code',
                     'departments_name',
@@ -328,7 +330,9 @@ class WorkView extends Model
                     'work_name',
                     'work_code',
                     'process_name',
-                    'status'
+                    'status',
+                    'performance',
+                    'comment'
                 );
                 if(!empty($params['pcode'])) {
                     $data->where('product_code', $params['pcode']);
@@ -443,9 +447,11 @@ class WorkView extends Model
                     [
                         'status' => $status_str,
                         'updated_user' => $ipaddr,
-                        'updated_at' => $systemdate
+                        'updated_at' => $systemdate,
+                        'id' => DB::raw('LAST_INSERT_ID(`id`)'),
                     ]
                 );
+                $uid = (int)DB::getPdo()->lastInsertId() ?: null;
 
             }
 
@@ -489,6 +495,7 @@ class WorkView extends Model
             'mode' => $params['mode'], 
             'e_message' => $e_message, 
             'result_msg' => $result_msg,
+            'uid' => $uid,
         ];
 
         return $redata;
@@ -497,6 +504,97 @@ class WorkView extends Model
 
     }
 
+
+
+    public function uodateWork(Request $request)
+    {
+        $result_data = $this->updateWorkData($request);
+        return $result_data;
+
+    }
+
+    public function updateWorkData($request) {
+        $action_msg = "";
+        $result = "";
+        $result_msg = "";
+        $e_message = "";
+        $systemdate = Carbon::now();
+        $ipaddr = mb_substr($_SERVER["REMOTE_ADDR"].'', 0, 50);
+
+        $params = $request->only([
+            's_id',
+            'performance',
+            'comment',
+            'mode',
+        ]);
+
+        try {
+
+            //$status_str = $params['submode'] == 'change' ? '完了' : '';
+
+
+
+            if($params['mode'] == 'performance_update') {
+                $updateresult = DB::table($this->table_process_date)
+                ->where('id', $params['s_id'])
+                ->update(
+                    [
+                        'performance' => $params['performance'],
+                        'comment' => $params['comment'],
+                        'updated_user' => $ipaddr,
+                        'updated_at' => $systemdate
+                    ]
+                );
+
+            }
+
+
+
+                if($updateresult) {
+                    /*
+                    if($params['submode'] == 'rechange') {
+                        $sshtml = "作業未完に変更";
+                    }
+                    elseif($params['submode'] == 'change') {
+                        $sshtml = "完了";
+                    }
+                    else {$sshtml = "";}
+                    */
+                    $result_msg = "OK";
+                    $e_message .= "実績 : ".$params['performance']." , コメント : ".$params['comment'];
+
+                }
+                else {
+
+                    $result_msg = "none";
+                    $e_message .= "performance -> ".$params['performance']."<br>"."comment -> ".$params['comment']."<br>";
+    
+
+                }
+
+
+        } catch (PDOException $e){
+            //print('Error:'.$e->getMessage());
+            $action_msg .= $e->getMessage().PHP_EOL."<br>\n";
+            //die();
+        }
+        
+
+        $redata = array();
+        $redata = [
+			'id' => $params['s_id'],
+            'performance' => $params['performance'],
+            'result' => $updateresult,
+            'mode' => $params['mode'], 
+            'e_message' => $e_message, 
+            'result_msg' => $result_msg,
+        ];
+
+        return $redata;
+
+
+
+    }
 
 
 
