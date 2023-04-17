@@ -236,7 +236,7 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 
 								<div id="form1">
 									<input type="number" class="form_style1 w10e" name="s_product_code" id="s_product_code" value="{{ $s_product_code }}">
-									<button class="transition1" type="button" onClick="clickEvent('searchform','1','1','confirm','『 検索 』','product_search','chkwrite')">検索</button>
+									<button class="transition1" type="button" onClick="clickEvent('searchform','1','1','confirm','『 検索 』','product_search','')">検索</button>
 									<div id="error">{{ $e_message }}</div>
 								</div>
 								@csrf 
@@ -362,6 +362,10 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 							@if ($editzone === true)
 								<div id="form_cnt">
 									<div>
+										<input type="radio" name="departments_code" value="1" id="departments_code1">
+										<label for="departments_code1" class="label transition2" onclick="WORKcollect(1,'営業部')">営業部</label>
+									</div>
+									<div>
 										<input type="radio" name="departments_code" value="8" id="departments_code8">
 										<label for="departments_code8" class="label transition2" onclick="WORKcollect(8,'業務課')">業務課</label>
 									</div>
@@ -396,6 +400,10 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 									<div>
 										<input type="radio" name="departments_code" value="10" id="departments_code10">
 										<label for="departments_code10" class="label transition2" onclick="WORKcollect(10,'品質保証')">品質保証</label>
+									</div>
+									<div>
+										<input type="radio" name="departments_code" value="29" id="departments_code29">
+										<label for="departments_code29" class="label transition2" onclick="WORKcollect(29,'コメント')">コメント</label>
 									</div>
 									<div class="mgla"><button type="button" class="gc1" style="width:auto;" onClick="unChecked('.chkonff')">CHECKクリア</button></div>
 								</div>
@@ -467,6 +475,7 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 								<div>
 									<button class="transition1" type="button" onClick="clickEvent('updateform','','','process_details_update','登録','product_update','chkwrite')">登録</button>
 									<button class="transition1" type="button" onClick="javascript:history.back();">戻る</button>
+									<button class="transition1" type="button" onClick="clickEvent('updateform','{{ $product_code }}','','process_data_capture','最新データ取り込み','data_capture','chkwrite')">最新データ取り込み</button>
 								</div>
 								<button class="gc5 transition1 mgla" type="button" onClick="clickEvent('updateform','','','process_details_del','削除','delete','chkwrite')">削除</button>
 							</div>
@@ -522,8 +531,10 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 			if( result ) {
 				//document.defineedit.edit_id.value = val;
 				//document.defineedit.submit();
+				var Jurlsd = '';
+				if(smd) Jurlsd = '?sd=' + smd;
 				fm.mode.value = md;
-				fm.action = '/process/search';
+				fm.action = '/process/search' + Jurlsd;
 				fm.submit();
 			}
 			else {
@@ -554,6 +565,23 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 				console.log('キャンセルがクリックされました');
 			}
 		}
+		else if(cf == 'process_data_capture') {
+			var Jcustomer = fm.customer.value;
+			var Jproduct_name = fm.product_name.value;
+			var Jend_user = fm.end_user.value;
+			//var Js_product_code = fm.s_product_code.value;
+			//var result = window.confirm( com1 +'\\n\\n店舗名 : '+ Jname +'\\nコード : '+ Jname_code +'');
+			var result = window.confirm('得意先 : ' + Jcustomer + '\n' + '品名 : ' + Jproduct_name + '\n' + 'エンドユーザー : ' + Jend_user + '\n\n' + com1 + '\n\n注意 : 現日報データで上書きされますので、現在の登録情報が失われます');
+			if( result ) {
+				fm.mode.value = md;
+				//fm.motion.value = 'reload';
+				fm.action = '/process/datacapture';
+				fm.submit();
+			}
+			else {
+				console.log('キャンセルがクリックされました');
+			}
+		}
 		else if(cf == 'process_details_del') {
 			var Jcustomer = fm.customer.value;
 			var Jproduct_name = fm.product_name.value;
@@ -574,6 +602,9 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 		else if(cf == 'confirm_update') {
 			var Jwork_name = fm.work_name.value;
 			var Jdepartments_name = fm.departments_name.value;
+			var Jlocapath = location.pathname;
+			var Jsearch = location.search;
+			//console.log('location -> ' + Jsearch);
 			//var Js_product_code = fm.s_product_code.value;
 			//var result = window.confirm( com1 +'\\n\\n店舗名 : '+ Jname +'\\nコード : '+ Jname_code +'');
 			var result = window.confirm('部署名 : ' + Jdepartments_name + '\n工程 : ' + Jwork_name + '\n' + com1 + 'します');
@@ -899,7 +930,7 @@ function WORKDATEchecked(fname,val1,val2,cf,com1,wc,dc) {
 function appendSTTS(dataarr) {
 	$.each(dataarr, function(index, data) {
 		//console.log('appendSTTS in each data -> ' + data + ' index -> ' + index);
-		var id_status = 'status' + dataarr['work_date'] + '_' + dataarr['work_code'];
+		var id_status = 'status' + dataarr['work_date'] + '_' + dataarr['work_code'] + '_' + dataarr['uid'];
 		//console.log('appendSTTS in each id_status -> ' + id_status);
 
 		if(index == 'e_message') document.getElementById('resultupdate').innerHTML = '<div class="txt1">' + data + '</div>\n';

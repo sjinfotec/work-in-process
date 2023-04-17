@@ -85,8 +85,68 @@ class Calendar extends Model
         //表示月初日の曜日を数値で取得
         //$w = $start_day->format('w');
 
+
+        // POST を受け取る変数を初期化
+        $url_sd = '';
+        $selsdval = '40';
+        //$urlname = $_SERVER['REQUEST_URI'];
+        $pathdir = dirname($_SERVER['REQUEST_URI']);
+        //echo "url -> ".$pathdir."<br>\n";
+        if($pathdir == '/view') {
+            $sendform = "viewform";
+            $jmode = "view";
+        }
+        elseif($pathdir == '/process') {
+            $sendform = "updateform";
+            $jmode = "confirm";
+
+        }
+        // セレクトボックスの値を格納する配列
+        $selsdList = array(
+        "20",
+        "40",
+        "60"
+        );
+        // 戻ってきた場合
+        if(isset($_GET['sd'])){
+            $selsdval = $_GET['sd'];
+        }
+
+        $html_select_sd = "<select id='selsd' name='selsd' onChange='viewListChange()'>\n";
+        foreach($selsdList as $value){
+            if($value === $selsdval){
+                // ① POST データが存在する場合はこちらの分岐に入る
+                $html_select_sd .= "<option value='$value' selected>".$value." 日表示</option>\n";
+            }else{
+                // ② POST データが存在しない場合はこちらの分岐に入る
+                $html_select_sd .= "<option value='$value'>".$value." 日表示</option>\n";
+            }
+        }
+        $html_select_sd .= "</select>\n";
+        $html_select_sd .= <<<EOF
+        <script type="text/javascript">
+        function viewListChange() {
+            var Jpcode = document.getElementById('s_product_code').value;
+            var Jsdval = document.getElementById('selsd').value;
+            var urlpathname  = location.pathname;
+            //var urlsd = urlpathname + '?sd=' + Jsdval;
+            var urlsd = Jsdval;
+            history.pushState( '', 'title', urlsd);
+            this.clickEvent('{$sendform}',Jpcode,'oneView','{$jmode}','表示','some_search',urlsd);
+            //location.reload();
+        }
+        </script>
+        EOF;
+        //何日表示停止中
+        $html_select_sd = "";
+
+
+
+
+
         //何日前から表示するか（カレンダー開始日）
-        $sd = 40;
+        $sd = isset($_GET['sd']) ? $_GET['sd'] : 40;
+        //$sd = 40;
     
         //表示月初日をカレンダーの開始日に変更する
         $start_day->modify('-' . $sd . ' day');
@@ -133,7 +193,13 @@ class Calendar extends Model
             $resdate = $result_date['result'];
             //var_dump($res);
             //echo $res[0]->product_code;
-    
+            $performance_wdkey = Array();
+            $comment_wdkey = Array();
+            $performance_wdkey_idkey = Array();
+            $comment_wdkey_idkey = Array();
+            $i = 0;
+            $workdatechk = "";
+            $worknamechk = "";
             foreach($resdate AS $key => $val) {
                 $work_date_arr[] = date("Y-m-d", strtotime($resdate[$key]->work_date));
                 $work_date = date("Y-m-d", strtotime($resdate[$key]->work_date));
@@ -141,18 +207,92 @@ class Calendar extends Model
                 $departments_name = $resdate[$key]->departments_name;
                 $work_name = $resdate[$key]->work_name;
                 $work_code = $resdate[$key]->work_code;
-                $work_code_wdkey[$work_date][$work_name] = $resdate[$key]->work_code;
-                $work_name_wdkey[$work_date][$work_name] = $resdate[$key]->departments_name;
-                $departments_code_wdkey[$work_date][$work_name] = $resdate[$key]->departments_code;
-                $departments_name_wdkey[$work_date][$work_name] = $resdate[$key]->departments_name;
-                $wname_dcode_wdkey[$work_name] = $resdate[$key]->departments_code;
-                $status_wdkey[$work_date][$work_name] = $resdate[$key]->status;
+                $id = $resdate[$key]->id;
+                //$work_code_wdkey[$work_date][$work_name] = $resdate[$key]->work_code;
+                $work_code_wdkey_idkey[$work_date][$work_name][$id] = $resdate[$key]->work_code;
+                //$work_name_wdkey[$work_date][$work_name] = $resdate[$key]->departments_name;
+                $work_name_wdkey_idkey[$work_date][$work_name][$id] = $resdate[$key]->departments_name;
+                //$work_name2_wdkey[$work_date][$work_name2] = $resdate[$key]->departments_name;
+                //$departments_code_wdkey[$work_date][$work_name] = $resdate[$key]->departments_code;
+                $departments_code_wdkey_idkey[$work_date][$work_name][$id] = $resdate[$key]->departments_code;
+                //$departments_name_wdkey[$work_date][$work_name] = $resdate[$key]->departments_name;
+                $departments_name_wdkey_idkey[$work_date][$work_name][$id] = $resdate[$key]->departments_name;
+                //$performance_wdkey[$work_date][$work_name] = $resdate[$key]->performance;
+                $performance_wdkey_idkey[$work_date][$work_name][$id] = $resdate[$key]->performance;
+                //$comment_wdkey[$work_date][$work_name] = $resdate[$key]->comment;
+                $comment_wdkey_idkey[$work_date][$work_name][$id] = $resdate[$key]->comment;
+                //$wname_dcode_wdkey[$work_name] = $resdate[$key]->departments_code;
+                $wname_dcode_wdkey_idkey[$work_name][$id] = $resdate[$key]->departments_code;
+                //$status_wdkey[$work_date][$work_name] = $resdate[$key]->status;
+                $status_wdkey_idkey[$work_date][$work_name][$id] = $resdate[$key]->status;
+                $i = $i + 1;
+                $workdatechk = $work_date;
+                $worknamechk = $work_name;
+                //echo "id -> ".$id."<br>\n";
+
             }
             //print_r($wname_dcode_wdkey);
             //echo "<br><br>\n";
-            //print_r($work_name_wdkey);
+            //print_r($comment_wdkey);
             //echo "<br><br>\n";
+            //vur_dump($performance_wdkey);
+            //echo "<br><br>\n";
+
+
+            //echo count($performance_wdkey, COUNT_RECURSIVE) . "<br>\n";
             
+            // 実績の収集
+            $result_pt = false;
+            $performance_table = "<div id='tbl_com'>\n<h4>実績一覧</h4>\n<table>\n";
+            $performance_table .= "<thead>\n<tr><th>日時</th><th>部署</th><th>作業</th><th>実績</th>\n</thead>\n<tbody>";
+            ksort($performance_wdkey_idkey);
+            foreach($performance_wdkey_idkey AS $perwdkey => $perwdarr) {
+                //echo "perwdkey->".$perwdkey."<br>\n";
+                foreach($perwdarr AS $perkey => $pervalarr) {
+                    foreach($pervalarr AS $key => $perval) {
+                        if(isset($perval)) {
+                            $pdateTimeObj = new DateTime($perwdkey);
+                            $pdateStr = $pdateTimeObj->format('Y年n月j日');
+                            //echo "perwdkey->".$pdateStr."<br>\n";
+                            //echo "perkey->".$perkey."<br>\n";
+                            //echo "perval->".$perval."<br>\n";
+                            $departments_name = $departments_name_wdkey_idkey[$perwdkey][$perkey][$key];
+                            $html_perval = is_numeric($perval) ? number_format($perval) : $perval;
+                            $performance_table .= "<tr><td>{$pdateStr}</td><td>{$departments_name}</td><td>{$perkey}</td><td class='ta_r'>{$html_perval}</td></tr>\n";
+                            $result_pt = true;
+                        }
+                    }
+                }
+            }
+            $performance_table .= "</tbody>\n</table>\n</div><!--end performance_html-->\n";
+            $performance_table = $result_pt ? $performance_table : ""; 
+
+  
+
+            // コメントの収集
+            $result_ct = false;
+            $comment_table = "<div id='tbl_com'>\n<h4>コメント一覧</h4>\n<table>\n";
+            $comment_table .= "<thead>\n<tr><th>日時</th><th>部署</th><th>作業</th><th>コメント</th>\n</thead>\n<tbody>";
+            ksort($comment_wdkey_idkey);
+            foreach($comment_wdkey_idkey AS $comwdkey => $comwdarr) {
+                foreach($comwdarr AS $comkey => $comvalarr) {
+                    foreach($comvalarr AS $key => $comval) {
+                        if(isset($comval)) {
+                            $dateTimeObj = new DateTime($comwdkey);
+                            $dateStr = $dateTimeObj->format('Y年n月j日');
+                            //echo "comwdkey->".$dateStr."<br>\n";
+                            //echo "comkey->".$comkey."<br>\n";
+                            //echo "comval->".$comval."<br>\n";
+                            $departments_name = $departments_name_wdkey_idkey[$comwdkey][$comkey][$key];
+                            $comment_table .= "<tr><td>{$dateStr}</td><td>{$departments_name}</td><td>{$comkey}</td><td>{$comval}</td></tr>\n";
+                            $result_ct = true;
+                        }
+                    }
+                }
+            }
+            $comment_table .= "</tbody>\n</table>\n</div><!--end comment_html-->\n";
+            $comment_table = $result_ct ? $comment_table : ""; 
+
     
             $class_array1 = Array(
                 '1' => 'd1c1',
@@ -177,7 +317,6 @@ class Calendar extends Model
                 $ymd_day =  $day->format('Y-m-d');
                 //当月以外の日付はgreyクラスを付与してCSSで色をグレーにする
                 $grey_class = $day->format('Y-m') === $year_month ? '' : 'grey';
-    
                 //echo "ymd_day = ".$ymd_day." : dkey = ".$dkey."<br>\n";
     
                 if(in_array($ymd_day, $work_date_arr)) {
@@ -192,29 +331,44 @@ class Calendar extends Model
                     $line[8][$dkey] = "";
                     $line[9][$dkey] = "";
                     $line[10][$dkey] = "";
+
                     
-                    foreach($work_name_wdkey[$ymd_day] AS $key => $val) {
-                        $dcode = $wname_dcode_wdkey[$key];
-                        $departments_name = $departments_name_wdkey[$ymd_day][$key];
-                        $wcode = $work_code_wdkey[$ymd_day][$key];
+                    foreach($work_name_wdkey_idkey[$ymd_day] AS $key => $valarr) {
+	                    foreach($valarr AS $idkey => $val) {
+	                        $dcode = $wname_dcode_wdkey_idkey[$key][$idkey];
+	                        $departments_name = $departments_name_wdkey_idkey[$ymd_day][$key][$idkey];
+	                        $comment = isset($comment_wdkey_idkey[$ymd_day][$key][$idkey]) ? $comment_wdkey_idkey[$ymd_day][$key][$idkey] : "";
+	                        $wcode = $work_code_wdkey_idkey[$ymd_day][$key][$idkey];
+	                        //echo "work_name_wdkey in ".$key."<br>\n";
 
-                        $status_str = mb_substr($status_wdkey[$ymd_day][$key], 0, 1) ?: "";
-                        $status = $status_str ? "<span id=\"status".$ymd_day."_".$wcode."\" class=\"color6\">".$status_str."</span>": "<span id=\"status".$ymd_day."_".$wcode."\" class=\"color6 bold\">&nbsp;</span>";
-                        $status_mode = $status_str ? "rechange" : "change"; 
+	                        $status_str = mb_substr($status_wdkey_idkey[$ymd_day][$key][$idkey], 0, 1) ?: "";
+	                        $status = $status_str ? "<span id=\"status".$ymd_day."_".$wcode."_".$idkey."\" class=\"color6\">".$status_str."</span>": "<span id=\"status".$ymd_day."_".$wcode."_".$idkey."\" class=\"color6 bold\">&nbsp;</span>";
+	                        $status_mode = $status_str ? "rechange" : "change"; 
 
-                        $dc = $departments_code_wdkey[$ymd_day][$key];
-                        $d = $dc % 10;
-                        if($d == 0) $d = 10;
-                        $departments_name = $rewcode !== $wcode ? "<span class=\"worktext\">".$departments_name."</span>" : "";
-                        //echo "wc = ".$wc." : w = ".$w." : d = ".$d."<br>\n";
-                        //echo $ymd_day."は配列内に存在します , ".$key." , ".$val."<br>\n";
-                        $class_w = $class_array1[$d];
-                        if($dc == 13) $class_w = 'd13c1';
-                        $line[$d][$dkey] .= "<div onClick=\"return statusChange('{$ymd_day}','{$pc}','{$dc}','{$wcode}','{$val}','{$key}','{$status_mode}');\" class=\"workitem {$class_w}\" title=\"".$key." , ".$val."\">".$status."".$departments_name."</div>";
-                        $redcode = $dcode;
-                        $rewcode = $wcode;
-    
+	                        $dc = $departments_code_wdkey_idkey[$ymd_day][$key][$idkey];
+	                        $d = $dc % 10;
+	                        if($d == 0) $d = 10;
+	                        //$departments_name = $rewcode !== $wcode ? "<span class=\"worktext\">".$departments_name."</span>" : "";
+	                        $departments_name = "<span class=\"worktext\">".$departments_name."</span>";
+	                        $comment_html = $rewcode !== $wcode ? "<span class=\"worktext wt2\">".$comment."</span>" : "";
+	                        //echo "wcode = ".$wcode." : val = ".$val." : ymd = ".$ymd_day." :  d = ".$d."<br>\n";
+	                        //echo $ymd_day."は配列内に存在します , ".$key." , ".$val."<br>\n";
+	                        $class_w = $class_array1[$d];
+	                        if($dc == 13) $class_w = 'd13c1';
+	                        if($dc == 29) {
+	                            $class_w = 'd29c1';
+	                            $line[$d][$dkey] .= "<div class=\"workitem {$class_w}\" title=\"".$comment."\">".$status."".$comment_html."</div>";
+	                        }
+	                        else {
+	                            $line[$d][$dkey] .= "<div onClick=\"return statusChange('{$ymd_day}','{$pc}','{$dc}','{$wcode}','{$val}','{$key}','{$status_mode}');\" class=\"workitem {$class_w}\" title=\"".$key." , ".$val."\">".$status."".$departments_name."</div>";
+	                        }
+	                        $redcode = $dcode;
+	                        $rewcode = $wcode;
+	                    }
                     }
+                 
+                    
+                       
                 }
                 else {
                     $line[1][$dkey] = "";
@@ -231,7 +385,7 @@ class Calendar extends Model
     
     
     
-    
+ 
     
     
                 $ym_date = $day->format('Y年n月') ;
@@ -246,7 +400,9 @@ class Calendar extends Model
                 
                 //本日にはtodayクラスを付与してCSSで数字の見た目を変える due_date $html_due_date $today->format('Y-m-d')
                 $today_class = $day->format('Y-m-d') === $f_today ? 'today' : '';
-                $due_class = $day->format('Y-m-d') === $f_due_date ? 'background:red; color:#FFF; font-weight:bold;' : '';
+                $todayback_class = $day->format('Y-m-d') === $f_today ? 'todayback' : '';
+                $due_class = $day->format('Y-m-d') === $f_due_date ? 'background:#EBC; color:#FFF; font-weight:bold;' : '';
+                $todaydate_class = $day->format('Y-m-d') === $f_today ? 'todaydate' : '';
                 $receive_class = $day->format('Y-m-d') === $f_receive_date ? 'background:#088; color:#FFF; font-weight:bold;' : '';
                 $platemake_class = $day->format('Y-m-d') === $f_platemake_date ? 'background:#808; color:#FFF; font-weight:bold;' : '';
                 if($day->format('Y-m-d') === $f_platemake_date && $day->format('Y-m-d') === $f_receive_date)   {
@@ -272,6 +428,7 @@ class Calendar extends Model
                 $pd5_class =  '';
                 $pd6_class =  '';
                 $pd7_class =  '';
+                $pd8_class =  '';
     
                 $line1 = $line[2][$dkey];
                 $line2 = $line[3][$dkey];
@@ -279,7 +436,8 @@ class Calendar extends Model
                 $line4 = $line[5][$dkey];
                 $line5 = $line[6][$dkey];
                 $line6 = $line[7][$dkey];
-                $line7 = $line[1][$dkey].$line[8][$dkey].$line[9][$dkey].$line[10][$dkey];
+                $line7 = $line[1][$dkey].$line[8][$dkey].$line[10][$dkey];
+                $line8 = $line[9][$dkey];
     
                 $fdw = $day->format('w');
                 
@@ -315,9 +473,12 @@ class Calendar extends Model
                         <div class="line"><div class="%s">%s</div></div>
                         <div class="line"><div class="%s">%s</div></div>
                         <div class="line"><div class="%s">%s</div></div>
+                        <div class="line"><div class="%s">%s</div></div>
                         '.$workdate_html.'
                     </div>
                     ',
+                    $pd8_class,
+                    $line8,
                     $pd1_class,
                     $line1,
                     $pd2_class,
@@ -337,29 +498,31 @@ class Calendar extends Model
     
     
                 $body .= sprintf('
-                    <div class="day_cnt" style="%s">
+                    <div class="day_cnt %s" style="%s">
                     <a href="/work/day?pcode='.$res[0]->product_code.'&wday=%s">
                     <div style="%s">%s</div><div class="datestyle %s %s">%s</div>
                     </a>
                     %s
                     '.$workspace.'
                     <a href="/work/day?pcode='.$res[0]->product_code.'&wday=%s">
-                    <div style="%s">%s</div><div class="datestyle %s ">%s</div>
+                    <div style="%s">%s</div><div class="datestyle %s %s">%s</div>
                     </a>
                     </div>
                     ',
+                    $todayback_class,
                     $due_class,
                     $day->format('Y-m-d'),
                     $style_bg,
                     $weekarr[$fdw],
                     $company_class,
-                    $today_class,
+                    $todaydate_class,
                     $day->format('j'),
                     $re_pl_html,
                     $day->format('Y-m-d'),
                     $style_bg,
                     $weekarr[$fdw],
                     $company_class,
+                    $todaydate_class,
                     $day->format('j'),
                 );
     
@@ -385,8 +548,11 @@ class Calendar extends Model
         }
     
     $cal_html = <<<EOF
+        {$performance_table}
+        {$comment_table}
         {$ym_html}
         {$body}
+        {$html_select_sd}
         <!--<div class="mgla"><button type="button" class="gc1" onClick="unChecked('.chkonff')">UNCHECK ALL</button></div>-->
         納期 ： {$f_due_date}
 

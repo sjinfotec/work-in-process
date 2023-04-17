@@ -276,7 +276,7 @@ class ViewController extends Controller
         $html_after_due_date = "";
         $e_message = "";
         $systemdate = Carbon::now();
-        $lnum = 20;  // limitの件数
+        $lnum = 5000;  // limitの件数
         $default = true;
         $viewmode = Array();
 
@@ -299,6 +299,7 @@ class ViewController extends Controller
 
                 $data = DB::table($this->table)
                 ->select(
+                    'id',
                     'product_code',
                     'serial_code',
                     'rep_code',
@@ -322,14 +323,14 @@ class ViewController extends Controller
                     $default = false;
                 }
                 if(!empty($params['duedate_start'])) {
-                    $data->where('after_due_date', '>=', $params['duedate_start'])->limit(30);
+                    $data->where('after_due_date', '>=', $params['duedate_start'])->limit(300);
                     $viewmode['duedatestart'] = 1;
                     $default = false;
                     $limiton = true;
                 }
                 if(!empty($params['duedate_end'])) {
                     $data->where('after_due_date', '<=', $params['duedate_end'])
-                    ->limit(30);
+                    ->limit(300);
                     $duecount = $data->count();
                     $viewmode['duedatestart'] = 1;
                     $default = false;
@@ -391,7 +392,7 @@ class ViewController extends Controller
                         $e_message .= "納期　本日以降  ".$limitcount." 件の表示<br>\n";
                     }
                     if(isset($limiton)) {
-                        $e_message .= "結果表示は 30件までです。<br>\n";
+                        $e_message .= "結果表示は 300件までです。<br>\n";
                     }
 
 
@@ -465,6 +466,7 @@ class ViewController extends Controller
             if(isset($s_product_code)) {
                 $data = DB::table($this->table_process_date)
                 ->select(
+                    'id',
                     'work_date',
                     'product_code',
                     'departments_name',
@@ -472,7 +474,9 @@ class ViewController extends Controller
                     'work_name',
                     'work_code',
                     'process_name',
-                    'status'
+                    'status',
+                    'performance',
+                    'comment'
                 );
                 $data->where('product_code', $s_product_code);
                 $result = $data
@@ -529,406 +533,6 @@ class ViewController extends Controller
 
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public function workdateSearch($request)
-    {
-        //$json = file_get_contents('php://input');
-        //$data = json_decode($json, true);
-        $content = $request->getContent();
-        $data = json_decode($content, true) ?? [];
-        
-        $ng_write = "";
-        var_dump($data);
-
-
-        if(!empty($data)) {
-            $s_product_code = !empty($data['s_product_code']) ? $data['s_product_code'] : "";
-            $product_code = !empty($data['product_code']) ? $data['product_code'] : "";
-            $departments_code = !empty($data['departments_code']) ? $data['departments_code'] : "";
-            $work_code = !empty($data['work_code']) ? $data['work_code'] : "";
-            $mode = !empty($data['mode']) ? $data['mode'] : "";
-        }
-        else {
-            $s_product_code = !empty($_POST['s_product_code']) ? $_POST['s_product_code'] : "";
-            $product_code = !empty($_POST['product_code']) ? $_POST['product_code'] : "";
-            $departments_code = !empty($_POST['departments_code']) ? $_POST['departments_code'] : "";
-            $work_code = !empty($_POST['work_code']) ? $_POST['work_code'] : "";
-            $mode = !empty($_POST['mode']) ? $_POST['mode'] : "";
-        }
-
-
-        $action_msg = "";
-        $result = "";
-        $wd_result = "";
-        $result_msg = "";
-        $html_after_due_date = "";
-        $e_message = "検索 ： ".$s_product_code."";
-
-        $work_date_arr = $request->only(['work_date']);
-        $str = "";
-        if(is_array($work_date_arr)) {
-            foreach($work_date_arr AS $key => $wdarr) {
-                foreach($wdarr AS $wdkey => $val) {
-                    $str .= "wdkey=".$wdkey.":val=".$val;
-                }
-            }
-        }
-
-
-
-
-        try {
-
-            if(isset($s_product_code)) {
-                $data = DB::table($this->table_process_date)
-                ->select(
-                    'work_date',
-                    'product_code',
-                    'departments_name',
-                    'departments_code',
-                    'work_name',
-                    'work_code',
-                    'process_name',
-                    'status'
-
-                );
-                $data->where('product_code', $s_product_code);
-                $data->where('departments_code', $departments_code);
-                $data->where('work_code', $work_code);
-                $result = $data
-                ->get();
-                $datacount = $data->count();
-
-
-
-                if($datacount > 0) {
-                    $result_msg = "OK";
-                    $e_message .= " 伝票番号 = ".$result[0]->product_code." <> count = ".$datacount." <> ";
-
-                }
-                else {
-
-                    $e_message .= " データがありません <> count = ".$datacount." <>  = ";
-                    $result_msg = "none";
-    
-
-                }
-
-
-
-                
-            }
-
-            //return $result;
-
-
-        } catch (PDOException $e){
-            //print('Error:'.$e->getMessage());
-            $action_msg .= $e->getMessage().PHP_EOL."<br>\n";
-            //die();
-        }
-        
-//$wd_result = (['departments_code' => $departments_code, 'work_code' => $work_code, 's_product_code' => $s_product_code, '文字列' => '日本語']);
-        $redata = [
-            's_product_code' => $s_product_code,
-            'product_code' => $product_code,
-            'departments_code' => $departments_code,
-            'work_code' => $work_code,
-            'wd_result' => $result,
-            'e_message' => $e_message, 
-            'result_msg' => $result_msg,
-            'mode' => $mode, 
-        ];
-
-            return $redata;
-
-    }
-
-    public function workDate(Request $request)
-    {
-        $content = $request->getContent();
-        $data = json_decode($content, true) ?? [];
-        
-        $ng_write = "";
-        //var_dump($data);
-
-        //$result = $this->workdateSearch($request);
-
-        if(!empty($data)) {
-            $s_product_code = !empty($data['s_product_code']) ? $data['s_product_code'] : "";
-            $product_code = !empty($data['product_code']) ? $data['product_code'] : "";
-            $departments_code = !empty($data['departments_code']) ? $data['departments_code'] : "";
-            $work_code = !empty($data['work_code']) ? $data['work_code'] : "";
-            $mode = !empty($data['mode']) ? $data['mode'] : "";
-        }
-        else {
-            $s_product_code = !empty($_POST['s_product_code']) ? $_POST['s_product_code'] : "";
-            $product_code = !empty($_POST['product_code']) ? $_POST['product_code'] : "";
-            $departments_code = !empty($_POST['departments_code']) ? $_POST['departments_code'] : "";
-            $work_code = !empty($_POST['work_code']) ? $_POST['work_code'] : "";
-            $mode = !empty($_POST['mode']) ? $_POST['mode'] : "";
-        }
-
-
-        $action_msg = "";
-        $result = "";
-        $wd_result = "";
-        $result_msg = "";
-        $html_after_due_date = "";
-        $e_message = "検索 ： ".$s_product_code."";
-
-        $work_date_arr = $request->only(['work_date']);
-        $str = "";
-        if(is_array($work_date_arr)) {
-            foreach($work_date_arr AS $key => $wdarr) {
-                foreach($wdarr AS $wdkey => $val) {
-                    $str .= "wdkey=".$wdkey.":val=".$val;
-                }
-            }
-        }
-
-
-
-
-        try {
-
-            if(isset($s_product_code)) {
-                $data = DB::table($this->table_process_date)
-                ->select(
-                    'work_date',
-                    'product_code',
-                    'departments_name',
-                    'departments_code',
-                    'work_name',
-                    'work_code',
-                    'process_name',
-                    'status'
-
-                );
-                $matchThese = ['product_code' => $s_product_code, 'departments_code' => $departments_code, 'work_code' => $work_code];
-                $data->where($matchThese);
-                $result = $data
-                ->get();
-                $datacount = $data->count();
-
-
-
-                if($datacount > 0) {
-                    $result_msg = "OK";
-                    $e_message .= " 伝票番号 = ".$result[0]->product_code." <> count = ".$datacount." <> ";
-
-                }
-                else {
-
-                    $e_message .= " データがありません <> count = ".$datacount." <>  = ";
-                    $result_msg = "none";
-    
-
-                }
-                $e_message .= "<br>matchThese = ".implode(',',$matchThese);
-
-                
-            }
-
-            //return $result;
-
-
-        } catch (PDOException $e){
-            //print('Error:'.$e->getMessage());
-            $action_msg .= $e->getMessage().PHP_EOL."<br>\n";
-            //die();
-        }
-
-
-
-        $redata[] = [
-            's_product_code' => $s_product_code,
-            'departments_code' => $departments_code,
-            'work_code' => $work_code,
-            'wd_result' => $result,
-            'e_message' => $e_message, 
-            'result_msg' => $result_msg,
-            'mode' => $mode
-        ];
-
-            //return $redata;
-            if(!empty($redata)) {
-                $jsondata = json_encode($redata, JSON_UNESCAPED_UNICODE);
-                $pattern = ['/"\s*"/', '/null/'];
-                $replace = ['""', '""'];
-                $jsonresult = preg_replace($pattern, $replace, $jsondata);
-    
-                //echo $jsonresult;
-                echo $jsondata;
-            }
-    
-
-
-
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public function getRequestFunc(Request $request)
-    {
-        
-        $mode = !empty($_POST["mode"]) ? $_POST['mode'] : "";
-        $action_msg = "";
-
-	        return view('process', [
-            	'mode' => $mode,
-                'action_msg' => $action_msg,
-	        ]);
-
-
-    }
-
-    public function getWORK()
-    {
-
-        $json = file_get_contents('php://input');
-        $data = json_decode($json, true);
-        
-        $ng_write = "";
-
-
-        //$s_product_id = isset($data['s_product_id']) ? $data['s_product_id'] : "";
-        $department = isset($data['department']) ? $data['department'] : "";
-        $mode = isset($data['mode']) ? $data['mode'] : "";
-        $submode = isset($data['submode']) ? $data['submode'] : "";
-        $details = isset($data['details']) ? $data['details'] : "";
-
-        $action_msg = "";
-        $result = "";
-        $result_msg = "";
-        $html_after_due_date = "";
-        $e_message = "検索 ： ".$department."";
-
-        try {
-
-            if(isset($department)) {
-                /*
-                $check_data = DB::table($this->table)
-                ->select(
-                    'product_code AS product_id',
-                    'serial_code AS serial_id',
-                    'rep_code AS rep_id',
-                    'after_due_date',
-                    'customer',
-                    'product_name',
-                    'end_user',
-                    'quantity',
-                    'comment'
-                );
-                $check_data->where('product_code', $s_product_id);
-                $check_count = $check_data->count();
-                */
-
-                //table('tasks')作業（掃除等含むのでそのままでは使えない）  table('equipments')機械
-                $data = DB::connection('nippou')->table('equipments')
-                ->select(
-                    'id',
-                    'name',
-                    'department_id'
-                );
-                $data->where('department_id', $department);
-                //$data->where('before_due_date', '2022/10/24');
-                $result = $data
-                ->get();
-                $count = $data->count();
-
-                    if($count > 0){
-                        //$r_after_due_date = $result[0]->after_due_date;
-                        //$html_after_due_date = !empty($r_after_due_date) ? date('n月j日', strtotime($r_after_due_date)) : "";
-                        //$e_message .= " 既に登録されています <> count = ".$count." <> date = ".$html_after_due_date;
-                        $result_msg = "OK";
-                    }
-                    else {
-
-                        /*
-                    $result = $check_data
-                    ->get();
-                    $r_after_due_date = $result[0]->after_due_date;
-                    $html_after_due_date = !empty($r_after_due_date) ? date('n月j日', strtotime($r_after_due_date)) : "";
-                    $e_message .= " 日報に登録なし <> count = ".$count." <> date = ".$html_after_due_date;
-                    */
-                    $result_msg = "nothing";
-
-                    }
-
-                
-            }
-
-            //return $result;
-
-
-        } catch (PDOException $e){
-            //print('Error:'.$e->getMessage());
-            $action_msg .= $e->getMessage().PHP_EOL."<br>\n";
-            //die();
-        }
-        
-
-
-        $redata = array();
-        $redata[] = [
-            'result' => $result,
-            'department' => $department,
-            'mode' => $mode, 
-            'e_message' => $e_message, 
-            'result_msg' => $result_msg
-        ];
-        if(!empty($redata)) {
-            $jsondata = json_encode($redata, JSON_UNESCAPED_UNICODE);
-            $pattern = ['/"\s*"/', '/null/'];
-            $replace = ['""', '""'];
-            $jsonresult = preg_replace($pattern, $replace, $jsondata);
-
-            echo $jsonresult;
-            //echo json_encode($redata, JSON_UNESCAPED_UNICODE);
-        }
-
-    }
-
-
-
-
-
 
 
 

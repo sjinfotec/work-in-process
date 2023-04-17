@@ -356,6 +356,7 @@ class ProcessController extends Controller
         $viewmode = "editing";
         $e_message = "検索 ： ".$s_product_code."  ".$after_due_date."";
 
+        //echo "select_html -> ".$select_html."<br>\n";
 
         $result_details = $this->SearchProcessDetails($request);
         $result_date = $this->SearchProcessDate($request);
@@ -528,6 +529,7 @@ class ProcessController extends Controller
             if(isset($s_product_code)) {
                 $data = DB::table($this->table_process_date)
                 ->select(
+                    'id',
                     'work_date',
                     'product_code',
                     'departments_name',
@@ -535,7 +537,9 @@ class ProcessController extends Controller
                     'work_name',
                     'work_code',
                     'process_name',
-                    'status'
+                    'status',
+                    'performance',
+                    'comment'
                 );
                 $data->where('product_code', $s_product_code);
                 $result = $data
@@ -692,11 +696,26 @@ class ProcessController extends Controller
                             //$result = array_splice($result, 1, 2);
                             $result = Array();
                             $result[0] = [
+                                'id' => '1032',
+                                'name' => 'テストデータ',
+                                'department_id' => '3'
+                                ];
+                            $result[1] = [
+                                'id' => '1033',
+                                'name' => '本番データ',
+                                'department_id' => '3'
+                                ];
+                            $result[2] = [
+                                'id' => '1034',
+                                'name' => '発送',
+                                'department_id' => '3'
+                                ];
+                            $result[3] = [
                                 'id' => '44',
                                 'name' => 'PC',
                                 'department_id' => '3'
                                 ];
-                            $result[1] = [
+                            $result[4] = [
                                 'id' => '1031',
                                 'name' => '作成',
                                 'department_id' => '3'
@@ -735,6 +754,14 @@ class ProcessController extends Controller
                     */
                     $result_msg = "nothing";
 
+                        if($department == 1) {
+                            $result[] = [
+                                'id' => '1041',
+                                'name' => '納期変更',
+                                'department_id' => '1'
+                                ];
+                            $result_msg = "OK";
+                        }
                         if($department == 8) {
                             $result[] = [
                                 'id' => '1001',
@@ -754,6 +781,11 @@ class ProcessController extends Controller
                             $result[] = [
                                 'id' => '1004',
                                 'name' => '伝票出力済',
+                                'department_id' => '8'
+                                ];
+                            $result[] = [
+                                'id' => '1005',
+                                'name' => '起票',
                                 'department_id' => '8'
                                 ];
                             $result_msg = "OK";
@@ -791,6 +823,14 @@ class ProcessController extends Controller
                                 'id' => '61',
                                 'name' => '打ち合わせ',
                                 'department_id' => '13'
+                                ];
+                            $result_msg = "OK";
+                        }
+                        if($department == 29) {
+                            $result[] = [
+                                'id' => '1029',
+                                'name' => 'コメント',
+                                'department_id' => '29'
                                 ];
                             $result_msg = "OK";
                         }
@@ -845,6 +885,174 @@ class ProcessController extends Controller
 
 
 
+
+
+
+
+
+
+
+
+    public function updateDataCapture(Request $request)
+    {
+
+        $mode = !empty($_POST["mode"]) ? $_POST['mode'] : "";
+        $s_product_code = !empty($_POST["s_product_code"]) ? $_POST['s_product_code'] : "";
+        $action_msg = "";
+        $result = "";
+        $result_details = "";
+        $result_date = "";
+        $result_logsearch = "";
+        $wd_result = "";
+        $result_msg = "";
+        $html_after_due_date = "";
+        $html_cal = "";
+        $viewmode = "editing";
+        $e_message = "取り込み ： ".$s_product_code."";
+        
+        $params = $request->only([
+            'product_code',
+            'serial_code',
+            'rep_code',
+            'after_due_date',
+            'customer',
+            'product_name',
+            'end_user',
+            'quantity',
+            'receive_date',
+            'platemake_date',
+            'status',
+            'comment',
+            //'created_user',
+            //'created_at',
+            //'updated_user',
+            //'updated_at',
+        ]);
+        
+
+        $ipaddr = $_SERVER["REMOTE_ADDR"];
+
+
+        try {
+
+            $re_data = [];
+            $systemdate = Carbon::now();
+
+            if(isset($s_product_code)) {
+                $data = DB::connection('nippou')->table('product_details')
+                ->select(
+                    'product_id',
+                    'serial_id',
+                    'rep_id',
+                    'customer',
+                    'product_name',
+                    'end_user',
+                    'quantity',
+                    'after_due_date',
+                    'comment'
+                );
+                $data->where('product_id', $s_product_code);
+                //$data->where('before_due_date', '2022/10/24');
+                $result = $data
+                ->get();
+                $count = $data->count();
+
+
+                //echo "count -> ".$count."<br>\n";
+                //var_dump($result);
+                //echo "after_due_date -> ".$result[0]->after_due_date."<br>\n";
+                
+                /*
+                $re_data = [
+                    'result' => $result,
+                    ];
+                */
+
+
+            }
+
+
+
+            $statusresult = false;
+
+            if($count > 0){
+                $statusresult = DB::table($this->table)
+                ->where('product_code', $s_product_code)
+                ->update(
+                    [
+                        'serial_code' => $result[0]->serial_id,
+                        'rep_code' => $result[0]->rep_id,
+                        'after_due_date' => $result[0]->after_due_date,
+                        'customer' => $result[0]->customer,
+                        'product_name' => $result[0]->product_name,
+                        'end_user' => $result[0]->end_user,
+                        'quantity' => $result[0]->quantity,
+                        'comment' => $result[0]->comment,
+                        'updated_user' => $ipaddr,
+                        'updated_at' => $systemdate,
+                    ]
+                );
+
+                //echo "statusresult -> ".$statusresult."<br>\n";
+
+            }
+
+            if($statusresult) {
+
+                $result_details = $this->SearchProcessDetails($request);
+                $result_date = $this->SearchProcessDate($request);
+                $after_due_date = $result_details['after_due_date'];    // return $redata = [ の after_due_date を指す。
+                $test = $result_details['result'][0]->after_due_date;    // return result[]から取得する場合　[0]のキーが必要。
+                $calendar_data = new Calendar();	// インスタンス作成
+                $html_cal = $calendar_data->calendar($result_details,$after_due_date,$wd_result,$result_date,$viewmode);	//開始年月～何か月分
+                $processlog_data = new ProcessLog();	// インスタンス作成
+                $result_logsearch = $processlog_data->LogSearch($request);
+                $select_html = 'Default';
+
+            }
+
+
+
+        } catch (PDOException $e){
+            //print('Error:'.$e->getMessage());
+            $action_msg .= $e->getMessage().PHP_EOL."<br>\n";
+            //die();
+        }
+        
+        return view('process', [
+            's_product_code' => $s_product_code,
+            'product_code' => $result[0]->product_id,
+            'serial_code' => $result[0]->serial_id,
+            'rep_code' => $result[0]->rep_id,
+            'after_due_date' => $result[0]->after_due_date,
+            'customer' => $result[0]->customer,
+            'product_name' => $result[0]->product_name,
+            'end_user' => $result[0]->end_user,
+            'quantity' => $result[0]->quantity,
+            'comment' => $result[0]->comment,
+            'status' => $params['status'],
+            'updated_user' => $ipaddr,
+            'mode' => $mode,
+            'action_msg' => $action_msg,
+            'e_message' => $e_message,
+            'result' => $result_details,
+            'result_date' => $result_date,
+            'result_log' => $result_logsearch,
+            'html_cal_main' => $html_cal,
+            'select_html' => $select_html,
+
+        ]);
+
+        
+
+
+
+
+
+
+
+
+    }
 
     public function updateProcessDetails(Request $request)
     {

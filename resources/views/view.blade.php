@@ -150,6 +150,10 @@ else {
 						</div>
 						
 						<form id="updateform" name="updateform" method="POST">
+							<input type="hidden" name="mode" id="mode" value="">
+							<input type="hidden" name="submode" id="submode" value="">
+							<input type="hidden" name="select_html" id="select_html" value="">
+							<input type="hidden" name="s_product_code" id="s_product_code" value="">
 							<div id="tbl_1" class="mgt10">
 								<table>
 									<thead>
@@ -169,8 +173,9 @@ else {
 									<tbody>
 									@forelse ($resultdata as $val)
 										<tr>
-											<td class="">
-												<button type="button" onClick="clickEvent('searchform','{{ $val->product_code }}','oneView','view','表示','some_search','')">表示</button>
+											<td class="nbr">
+												<button type="button" onClick="clickEvent('updateform','{{ $val->product_code }}','oneView','view','表示','some_search','')">表示</button>
+												<button class="style5" type="button" onClick="clickEvent('updateform','{{ $val->product_code }}','','confirm_process','下記の工程を編集します','','')">編集</button>
 											</td>
 											<td class="">{{ $val->product_code }}</td>
 											<td class="">{!! date('Y-m-d', strtotime($val->after_due_date)) !!}</td>
@@ -230,6 +235,7 @@ else {
 								<div id="top_cnt">
 									<div>
 										<button class="style3 transition1" type="button" onClick="javascript:history.back();">戻る</button>
+										<button class="style3 transition1" type="button" onClick="javascript:location.reload();">描画更新</button>
 									</div>
 
 									<div id="confirm_area" class="">
@@ -272,6 +278,9 @@ else {
 										<button class="mgla style3 transition1" type="button" onClick="javascript:history.back();">戻る</button>
 									</div>
 								</div>
+								<form id="viewform" name="viewform" method="POST">
+								<input type="hidden" name="mode" id="mode" value="">
+								<input type="hidden" name="select_html" id="select_html" value="">
 								<table>
 									<thead>
 										<tr>
@@ -289,7 +298,7 @@ else {
 									<tbody>
 									@forelse ($resultdata as $val)
 										<tr>
-											<td class="">{{ $val->product_code }}</td>
+											<td class="">{{ $val->product_code }}<input type="hidden" name="s_product_code" id="s_product_code" value="{{ $val->product_code }}"></td>
 											<td class="">{!! date('Y-m-d', strtotime($val->after_due_date)) !!}</td>
 											<td class="">{{ $val->customer }}</td>
 											<td class="">{{ $val->product_name }}</td>
@@ -305,6 +314,8 @@ else {
 									@endforelse
 									</tbody>
 								</table>
+								@csrf
+								</form>
 							</div>
 
 						<div id="resultupdate"></div>
@@ -312,79 +323,6 @@ else {
 
 
 					{!! $html_cal_main !!}
-
-
-					@elseif($select_html === 'dayView')
-							<div id="tbl_1" class="">
-								<div id="top_cnt">
-									<button class="style3 transition1" type="button" onClick="javascript:history.back();">戻る</button>
-									<button class="mgla style3 transition1" type="button" onClick="javascript:history.back();">戻る</button>
-								</div>
-
-								<div></div>
-								<h2>月日の作業</h2>
-
-								<table>
-									<thead>
-										<tr>
-											<th>作業日</th>
-											<th>部署名</th>
-											<th>作業名</th>
-										</tr>
-									</thead>
-									<tbody>
-									@forelse ($resultdata as $val)
-										<tr>
-											<td class="">{!! date('Y-m-d', strtotime($val->work_date)) !!}</td>
-											<td class="">{{ $val->departments_name }}</td>
-											<td class="">{{ $val->work_name }}</td>
-										</tr>
-
-									@empty
-										<tr><td colspan="3">no data</td></tr>
-									@endforelse
-									</tbody>
-								</table>
-
-
-
-
-								<table>
-									<thead>
-										<tr>
-											<th>伝票番号</th>
-											<th>納期</th>
-											<th>得意先</th>
-											<th>品名</th>
-											<th>エンドユーザー</th>
-											<th>数量</th>
-											<th>入稿日</th>
-											<th>下版日</th>
-											<th>コメント</th>
-										</tr>
-									</thead>
-									<tbody>
-									@forelse ($resultdata as $val)
-										<tr>
-											<td class="">{{ $val->product_code }}</td>
-											<td class="">{!! date('Y-m-d', strtotime($val->after_due_date)) !!}</td>
-											<td class="">{{ $val->customer }}</td>
-											<td class="">{{ $val->product_name }}</td>
-											<td class="">{{ $val->end_user }}</td>
-											<td class="">{{ $val->quantity }}</td>
-											<td class="">@php echo isset($val->receive_date) ? date('Y-m-d', strtotime($val->receive_date)) : ""; @endphp</td>
-											<td class="">@php echo isset($val->platemake_date) ? date('Y-m-d', strtotime($val->platemake_date)) : ""; @endphp</td>
-											<td class="">{{ $val->comment }}</td>
-										</tr>
-
-									@empty
-										<tr><td colspan="10">no data</td></tr>
-									@endforelse
-									</tbody>
-								</table>
-							</div>
-
-
 
 					@endif
 
@@ -417,11 +355,25 @@ else {
 			}
 		}
 		else if(cf == 'view') {
+				var Jurlsd = '';
+				if(smd) Jurlsd = '?sd=' + smd;
 				fm.mode.value = md;
 				fm.s_product_code.value = val1;
 				fm.select_html.value = val2;
-				fm.action = '/view/search';
+				fm.action = '/view/search' + Jurlsd;
 				fm.submit();
+		}
+		else if(cf == 'confirm_process') {
+			//var Jproduct_code = document.getElementById('product_code' + val1).value;
+			//var Jstatus = fm.status.value;
+			//var result = window.confirm( com1 +'\n伝票番号 : '+ Jproduct_code +'');
+			var result = window.confirm( com1 +'\n伝票番号 : '+ val1 +'');
+			if( result ) {
+				fm.s_product_code.value = val1;
+				fm.select_html.value = val2;
+				fm.action = '/process/search';
+				fm.submit();
+			}
 		}
 		else {
 			fm.submit();
@@ -452,7 +404,8 @@ function chkOnOff(c) {
 function appendSTTS(dataarr) {
 	$.each(dataarr, function(index, data) {
 		//console.log('appendSTTS in each data -> ' + data + ' index -> ' + index);
-		var id_status = 'status' + dataarr['work_date'] + '_' + dataarr['work_code'];
+		//var id_status = 'status' + dataarr['work_date'] + '_' + dataarr['work_code'];
+		var id_status = 'status' + dataarr['work_date'] + '_' + dataarr['work_code'] + '_' + dataarr['uid'];
 		//console.log('appendSTTS in each id_status -> ' + id_status);
 
 		if(index == 'e_message') document.getElementById('resultupdate').innerHTML = '<div class="txt1">' + data + '</div>\n';

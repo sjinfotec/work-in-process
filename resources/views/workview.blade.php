@@ -14,7 +14,7 @@ $action_msg .= "mode：".$mode."<br>\n";
 
 //var_dump($result);
 //echo "<br><br>1:\n";
-echo "select_html = ".$select_html."<br>\n";
+//echo "select_html = ".$select_html."<br>\n";
 //echo "<br><br>2:\n";
 
 if(isset($result['result_date'])) {
@@ -315,7 +315,7 @@ if(isset($result['result_details'])) {
 										</tr>
 
 									@empty
-										<tr><td colspan="10">no data</td></tr>
+										<tr><td colspan="9">no data</td></tr>
 									@endforelse
 									</tbody>
 								</table>
@@ -325,6 +325,7 @@ if(isset($result['result_details'])) {
 
 
 					@elseif($select_html === 'dayView')
+						<form id="updateform" name="updateform" method="POST">
 							<div id="tbl_1" class="">
 								<div id="top_cnt">
 									<button class="style3 transition1" type="button" onClick="javascript:history.back();">戻る</button>
@@ -339,13 +340,18 @@ if(isset($result['result_details'])) {
 								<h2 class="color5">{{ $result['result_date']['html_f_work_date'] }}</h2>
 								@endempty
 
-
+								<input type="hidden" name="s_id" id="s_id" value="">
+								<input type="hidden" name="s_performance" id="s_performance" value="">
+								<input type="hidden" name="s_comment" id="s_comment" value="">
+								<input type="hidden" name="mode" id="mode" value="performance_update">
 								<table>
 									<thead>
 										<tr>
-											<!--<th>作業日</th>-->
+											<th class="stylebg1">&nbsp;</th>
 											<th class="stylebg1 w20r">部署名</th>
 											<th class="stylebg1">作業名</th>
+											<th class="stylebg1">実績</th>
+											<th class="stylebg1">コメント</th>
 											<th class="stylebg1 w20r">進捗</th>
 										</tr>
 									</thead>
@@ -353,17 +359,43 @@ if(isset($result['result_details'])) {
 									@forelse ($resultdate as $val)
 										<tr>
 											<!--<td class="">{!! date('Y 年 m 月 d 日', strtotime($val->work_date)) !!}</td>-->
+											<td class="stylebg2">
+												<button id="btn_{{ $val->id }}" class="style5 display_none" type="button" onClick="clickEvent('updateform','{{ $val->id }}','','confirm_work_update','『 更新 』','','')">更新</button>	
+												<input type="hidden" class="input_style" name="id" id="id" value="{{ $val->id }}">
+												<span id="log_{{ $val->id }}"></span>
+											</td>
 											<td class="stylebg2">{{ $val->departments_name }}</td>
 											<td class="stylebg2">{{ $val->work_name }}</td>
+											<td class="stylebg2 w10e"><input type="text" class="form_style2" name="performance" id="performance_{{ $val->id }}" value="{{ $val->performance }}"></td>
+											<td class="stylebg2 "><input type="text" class="form_style2" name="comment" id="comment_{{ $val->id }}" value="{{ $val->comment }}"></td>
 											<td class="stylebg2">{{ $val->status }}</td>
 										</tr>
 
+										<script type="text/javascript">
+											const input{{ $val->id }} = document.getElementById('performance_{{ $val->id }}');
+											const inputcom{{ $val->id }} = document.getElementById('comment_{{ $val->id }}');
+											const log{{ $val->id }} = document.getElementById('log_{{ $val->id }}');
+											const btn{{ $val->id }} = document.getElementById('btn_{{ $val->id }}');
+											input{{ $val->id }}.addEventListener('input', updateValue);
+											inputcom{{ $val->id }}.addEventListener('input', updateValue);
+											// addEventListener('change', updateValue)
+											function updateValue(e) {
+												//log{{ $val->id }}.textContent = e.target.value;
+												log{{ $val->id }}.innerHTML = '<span class="color_red">※変更中</span>';
+												//log{{ $val->id }}.innerHTML += e.target.value;
+												btn{{ $val->id }}.classList.remove("display_none");
+											}
+										</script>
+
 									@empty
-										<tr><td colspan="3">作業なし</td></tr>
+										<tr><td colspan="6">作業なし</td></tr>
 									@endforelse
 									</tbody>
 								</table>
 							</div>
+
+							<input type="hidden" class="form_style2" name="performance" id="performance" value="未使用">
+							<p id="log"></p>
 
 							<div id="tbl_1" class="">
 
@@ -396,12 +428,13 @@ if(isset($result['result_details'])) {
 										</tr>
 
 									@empty
-										<tr><td colspan="10">no data</td></tr>
+										<tr><td colspan="9">no data</td></tr>
 									@endforelse
 									</tbody>
 								</table>
 
 							</div>
+						</form>
 
 							@if($result['result_details']['datacount'] === 1)
 								<div class="mgt20">
@@ -414,6 +447,7 @@ if(isset($result['result_details'])) {
 
 						<div id="resultupdate"></div>
 						<div id="resultstr"></div>
+						<div id="resultlist"><ul></ul></div>
 
 					@endif
 
@@ -427,7 +461,18 @@ if(isset($result['result_details'])) {
 @section('jscript')
 
 <script type="text/javascript">
-	function clickEvent(fname,val1,val2,cf,com1,md,smd) {
+// 未使用↓
+//const input = document.querySelector('input');
+const input = document.getElementById('performance');
+const log = document.getElementById('log');
+input.addEventListener('change', updateValue);
+function updateValue(e) {
+  log.textContent = e.target.value;
+}
+//未使用↑
+
+
+function clickEvent(fname,val1,val2,cf,com1,md,smd) {
 	var fm = document.getElementById(fname);
 	//var tname = document.getElementsByName(val1);
 	//Submit値を操作
@@ -469,6 +514,19 @@ if(isset($result['result_details'])) {
 				fm.select_html.value = val2;
 				fm.action = '/view/search';
 				fm.submit();
+		}
+		else if(cf == 'confirm_work_update') {
+			var Jperformance = document.getElementById('performance_' + val1).value;
+			//var Jstatus = fm.status.value;
+			//var result = window.confirm( com1 +'\n伝票番号 : '+ Jproduct_code +'');
+			var result = window.confirm( com1 +'\n'+ Jperformance +'');
+			if( result ) {
+				//fm.s_id.value = val1;
+				//fm.s_performance.value = Jperformance;
+				//fm.action = '/w';
+				//fm.submit();
+				this.ListUpdate(val1);
+			}
 		}
 		else if(cf == 'process_details_update') {
 			var Jcustomer = fm.customer.value;
@@ -552,18 +610,91 @@ if(isset($result['result_details'])) {
 			}
 
 
-
-
-
-
-
-
-
 		}
 		else {
 			fm.submit();
 		}
-	}
+}
+
+
+
+var addcount = Number('1');
+// 画面を更新する処理
+function appendListADD(dataarr,n) {
+	//$.each(dataarr, function(index, data) {
+		//console.log('appendList in 配列index = ' + index + ' ; data =' + data );
+		//$('#list ul').append("No. : " + data.t_number + "<br>名前 : " + data.name + "<br>name_code : " + data.name_code + '');
+		//$('#resultupdate').html = ( "message--" + data.e_message );
+		var btnid = document.getElementById('btn_' + dataarr.id);
+		var logid = document.getElementById('log_' + dataarr.id);
+		//document.getElementById('resultupdate').innerHTML = '<div class="txt1">' + dataarr.e_message + '</div>\n';
+		const statusv = '<span style="color:green;">更新OK</span>';
+		if(dataarr.result_msg == 'OK') {
+			//$('#resultlist ul').prepend('<li><span>' + index + '</span>&emsp;<span class="txtcolor1">&#10004;</span>&emsp;No.&ensp;<span class="dtnum">' + data + '</span> ' + statusv + '</li>\n');
+			$('#resultlist ul').prepend('<li><span>' + dataarr.id + '</span>&emsp;<span class="dtnum">' + dataarr.e_message + '</span> ' + statusv + '</li>\n');
+			
+			//document.getElementById('btn_cnt_new' + data.listcount).innerHTML = '<span class="color_green">' + '<button class="style5" type="button" disabled>登録完了</button>' + '</span>'+
+			//'<button class="style3" type="button" onClick="clickEvent(\'setprocess\','+ n +',\'\',\'confirm_process\',\'下記の工程を作成します\',\'\',\'\')">工程作成</button>';
+			//$('#resultstr').prepend('<tr><td>' + data.listcount + '</td><td class="txtcolor1">&#10004;</td><td>No.&ensp;<span class="dtnum">' + data.product_code + '</span></td><td>' + statusv + '</td></tr>\n');
+
+			btnid.classList.add("display_none");
+			logid.innerHTML = '<span class="color_green">更新済</span>';
+
+		}
+		else {
+			statusv = '<span style="color:red;">NG</span>';
+			$('#resultlist ul').prepend('<li><span>' + dataarr.id + '</span>&emsp;<span class="dtnum">' + dataarr.e_message + '</span> ' + statusv + '</li>\n');
+		}
+		addcount = addcount + 1;
+	//});
+}
+
+
+function ListUpdate(n) {
+	var Jperformance = document.getElementById('performance_' + n).value;
+	var Jcomment = document.getElementById('comment_' + n).value;
+	var Mode = document.getElementById('mode').value;
+	//console.log("Jproduct_code :" + Jproduct_code);
+	const res = axios.post("/work/update", {
+		s_id: n,
+		performance: Jperformance,
+		comment: Jcomment,
+		mode: Mode,
+	})
+	.then(response => {
+		appendListADD(response.data,n);
+		
+	})
+	.catch(error => {
+		console.log('error message = ' + error.message );
+	});
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
