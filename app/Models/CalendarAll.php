@@ -32,14 +32,17 @@ class CalendarAll extends Model
         $work_date_arr = Array();
         $result_details_key = $key;
 
-        echo "after_due_date >> ".$result['result'][$key]->after_due_date."<br>\n";
+        //echo "after_due_date >> ".$result['result'][$key]->after_due_date."<br>\n";
         $after_due_date = $result['result'][$key]->after_due_date;
-        echo "customer >> ".$result['result'][$key]->customer."<br>\n";
+        //echo "customer >> ".$result['result'][$key]->customer."<br>\n";
         $customer = $result['result'][$key]->customer;
-        echo "product_name >> ".$result['result'][$key]->product_name."<br>\n";
+        //echo "product_name >> ".$result['result'][$key]->product_name."<br>\n";
         $product_name = $result['result'][$key]->product_name;
-        echo "end_user >> ".$result['result'][$key]->end_user."<br>\n";
+        //echo "end_user >> ".$result['result'][$key]->end_user."<br>\n";
         $end_user = $result['result'][$key]->end_user;
+        //$pc = isset($resdate[$key]) ? $resdate[$key]->product_code : "";
+        $pc = isset($result['result'][$key]) ? $result['result'][$key]->product_code : "";
+
 
         
         $today = new DateTime();
@@ -108,7 +111,7 @@ class CalendarAll extends Model
         $sendform = "";
         $jmode = "";
         $pathdir = dirname($_SERVER['REQUEST_URI']);
-        echo "url >> ".$pathdir."<br>\n";
+        //echo "url >> ".$pathdir."<br>\n";
         if($pathdir == '/schedule') {
             $sendform = "viewform";
             $jmode = "view";
@@ -213,7 +216,7 @@ class CalendarAll extends Model
             $res = $result['result'];
             $resdate = $result_date['result'];
             //var_dump($res);
-            //echo $res[0]->product_code;
+            //echo "product code -> ".$res[$key]->product_code."<br>\n";
             $performance_wdkey = Array();
             $comment_wdkey = Array();
             $performance_wdkey_idkey = Array();
@@ -253,14 +256,18 @@ class CalendarAll extends Model
             $allwdate_arr[] = $f_receive_date;
             $allwdate_arr[] = $f_platemake_date;
             $allwdate_arr = array_filter($allwdate_arr);
-            $wdmax = max($allwdate_arr);
-            $wdmin = min($allwdate_arr);
-            echo "wdmax >> ".$wdmax."<br>\n";
-            echo "wdmin >> ".$wdmin."<br>\n";
+            if(count($allwdate_arr) > 0) {
+                $wdmax = max($allwdate_arr);
+                $wdmin = min($allwdate_arr);
+    
+            }
+            else {
+                $wdmax = "";
+                $wdmin = "";
+            }
+            //echo "wdmax >> ".$wdmax."<br>\n";
+            //echo "wdmin >> ".$wdmin."<br>\n";
             //var_dump($allwdate_arr);
-
-
-
             //echo count($performance_wdkey, COUNT_RECURSIVE) . "<br>\n";
             
             // 実績の収集
@@ -330,7 +337,7 @@ class CalendarAll extends Model
             );
             $redcode = "";
             $rewcode = "";
-            $pc = isset($resdate[0]) ? $resdate[0]->product_code : '';
+
     
     
             $body .= '<div id="calendar">';
@@ -426,7 +433,7 @@ class CalendarAll extends Model
     
                 
                 //本日にはtodayクラスを付与してCSSで数字の見た目を変える due_date $html_due_date $today->format('Y-m-d')
-                $today_class = $day->format('Y-m-d') === $f_today ? 'today' : '';
+                $today_class = $day->format('Y-m-d') === $f_today ? "today" : "";
                 $todayback_class = $day->format('Y-m-d') === $f_today ? 'todayback' : '';
                 //$due_class = $day->format('Y-m-d') === $f_due_date ? 'background:#EBC; color:#FFF; font-weight:bold;' : '';
                 $due_class = $day->format('Y-m-d') === $f_due_date ? 'background:#EBC; color:#FFF;' : '';
@@ -601,11 +608,11 @@ class CalendarAll extends Model
     
             }
 
-            $btn_view = "<button type=\"button\" class=\"calbtn\" onClick=\"clickEvent('updateform','{$resdate[0]->product_code}','oneView','view','表示','some_search','')\">表示</button>";
+            $btn_view = "<button type=\"button\" class=\"calbtn\" onClick=\"clickEvent('viewprocess','{$pc}','oneView','view','表示','some_search','')\">表示</button>";
     
             $body .= "</div><!--end id calendar_dayzone-->\n";
             $body .= "</div><!--end class f-->\n";
-            $body .= "\t<div class='cpuzone'>{$btn_view}&emsp;{$customer}&emsp;{$product_name}&emsp;{$end_user}</div>\n";
+            $body .= "\t<div class='cpuzone'>{$btn_view}&emsp;{$pc}&emsp;{$customer}&emsp;{$product_name}&emsp;{$end_user}</div>\n";
             $body .= "</div><!--end id calendar-->\n";
     
         }
@@ -617,8 +624,7 @@ class CalendarAll extends Model
         $cal_html .= $body."\n";
         //$cal_html .= $html_select_sd."\n";
         //$cal_html .= "納期 ： ".$f_due_date."\n";
-
-    
+ 
     
         return $cal_html;
     }

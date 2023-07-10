@@ -8,10 +8,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use App\Models\Calendar;
 use App\Models\ProcessLog;
+use App\Models\FileUpload;
 
 class ProcessController extends Controller
 {
@@ -1082,6 +1084,8 @@ class ProcessController extends Controller
         $mode = !empty($_POST["mode"]) ? $_POST['mode'] : "";
         $motion = !empty($_POST["motion"]) ? $_POST['motion'] : "";
 
+
+
         $this->serial_code = $request->serial_code;
         $params = $request->only([
             'product_code',
@@ -1133,10 +1137,20 @@ class ProcessController extends Controller
         ]);
 
 
+
+        //$upload_file = $request->upload_file;
+        //var_dump($upload_file);
+        //$file_upload = new FileUpload();	// インスタンス作成
+        //$result_filesup = $file_upload->files_upload($upload_file, './tmp/', '', '');	//
+
+        //var_dump($result_filesup);
+
+
         try {
             $systemdate = Carbon::now();
             $re_data = [];
             $make_instance_true = false;
+            $make_instance_true2 = false;
 
             if($mode == 'delete') {
                 $count1 = DB::table($this->table_process_date)
@@ -1149,6 +1163,34 @@ class ProcessController extends Controller
                 ->where('product_code', $s_product_code)
                 ->delete();
 
+                // file削除
+                $filedel_msg = "";
+                $directory = "public/".$product_code;
+                /*
+                $dirfiles = Storage::files($directory);
+                foreach($dirfiles as $filename) {
+                    if($result = mb_strpos($filename, $product_code)) {
+                        $filedel_msg .= $result." ";
+                        $result_del = Storage::delete($filename);
+                        if($result_del == 1) {
+                            $filedel_msg .= "result_del -> ".$result_del." : ".$filename." 削除<br>\n";
+                        }
+                        else {
+                            $filedel_msg .= "result_del -> ".$result_del." : <span>エラー</span> ".$filename." 削除できませんでした<br>\n";
+                        }
+
+                    } 
+                }
+                */
+                $result_del = Storage::deleteDirectory($directory);
+                if($result_del == 1) {
+                    $filedel_msg .= "result_del -> ".$result_del." : ".$directory." ディレクトリ削除<br>\n";
+                }
+                else {
+                    $filedel_msg .= "result_del -> ".$result_del." : <span>エラー</span> ".$directory." ディレクトリ削除できませんでした<br>\n";
+                }
+        
+
 
                 $result_details = "";
                 $result_date = "";
@@ -1156,10 +1198,36 @@ class ProcessController extends Controller
                 $html_cal = "";
                 $select_html = 'Resultview';
 
-                $e_message = "削除しました -> 伝票番号 : ".$params['product_code']." ／ 品名 : ".$params['product_name']."";
+                $e_message = "削除しました -> 伝票番号 : ".$params['product_code']." ／ 品名 : ".$params['product_name']."<br>\n";
+                $e_message .= $filedel_msg;
                 $result_msg = "DEL";
 
     
+            }
+            else if($mode == 'filedelete') {
+                $filedel_msg = "";
+                $filename = $request->filename;
+                if(isset($filename)) {
+                    $result_del = Storage::delete($filename);
+                    if($result_del == 1) {
+                        $filedel_msg .= "result_del -> ".$result_del." : ".$filename." 削除<br>\n";
+                        $e_message = "削除しました -> ファイル名 : ".$filename."";
+                        $result_msg = "DEL";
+                    }
+                    else {
+                        $filedel_msg .= "result_del -> ".$result_del." : <span>エラー</span> ".$filename." 削除できませんでした<br>\n";
+                    }
+
+                }
+                $make_instance_true2 = true; 
+                $result_details = "";
+                $result_date = "";
+                $after_due_date = "";
+                $html_cal = "";
+                $select_html = 'Edit';
+                //Storage::delete('file.jpg');
+                //Storage::delete(['file.jpg', 'file2.jpg']);   //  配列
+
             }
             else if($mode == 'process_status_rec') {
                 $update = [
@@ -1198,6 +1266,16 @@ class ProcessController extends Controller
 
             }
             else {
+
+                // file upload
+                $files = $request->file('upload_file') ?: Array();
+                $product_code = $params['product_code'];
+                foreach($files as $file){
+                    $file_name = $file->getClientOriginalName();
+                    $file->storeAS('public/'.$product_code, $product_code."_".$file_name);
+                }
+
+                //var_dump($dirfiles);
 
                 $updateresult = DB::table($this->table)
                 ->updateOrInsert(
@@ -1247,6 +1325,13 @@ class ProcessController extends Controller
         
             }
             
+            if($make_instance_true2) {
+                $result_details = $this->SearchProcessDetails($request);
+                //$result_date = $this->SearchProcessDate($request);
+                $after_due_date = $result_details['after_due_date'];    // return $redata = [ の after_due_date を指す。
+                $test = $result_details['result'][0]->after_due_date;    // return result[]から取得する場合　[0]のキーが必要。
+        
+            }
             
     
             //$wd_result = $this->workdateSearch($request);
@@ -1395,6 +1480,7 @@ class ProcessController extends Controller
             $count = "";
             $updateresult = "";
             if(is_array($work_date_arr)) {
+                $processdetail_updatetrue = false;
                 foreach($work_date_arr AS $key => $wdarr) {
                     foreach($wdarr AS $wdkey => $val) {
                         $str .= "wdkey=".$wdkey.":val=".$val;
@@ -1407,7 +1493,11 @@ class ProcessController extends Controller
                             ->where('departments_code', $params['departments_code'])
                             ->where('work_code', $params['work_code'])
                             ->delete();
-                            $loginserttrue = true;
+                            //echo "mode == 'delete' updateresult -> ".$updateresult."<br>\n";
+                            if($updateresult == 1) {
+                                $loginserttrue = true;
+                                $processdetail_updatetrue = true;
+                            }
                 
                         }
                         
@@ -1478,20 +1568,12 @@ class ProcessController extends Controller
                                 );
                                 $loginserttrue = true;
                                 //echo "updateresult ->> ".$updateresult."<br>\n";
-                                /*
-                                $insertdata[] = array(
-                                    'work_date' => $val,
-                                    'product_code' => $s_product_code,
-                                    'motion' => $motion,
-                                    'departments_name' => $params['departments_name'], 
-                                    'departments_code' => $params['departments_code'],
-                                    'work_name' => $params['work_name'], 
-                                    'work_code' => $params['work_code'],
-                                    'process_name' => '', 
-                                    'created_user' => $ipaddr,
-                                    'created_at' => $systemdate
-                                );
-                                */
+                                if($params['departments_code'] == "4" || $params['departments_code'] == "5" || $params['work_code'] == "43" ) {
+                                    //echo "if departments_code -> ".$params['departments_code']."<br>\n";
+                                    //echo "if work_code -> ".$params['work_code']."<br>\n";
+                                    $processdetail_updatetrue = true;
+                                } 
+                                
 
                             }     
 
@@ -1531,6 +1613,52 @@ class ProcessController extends Controller
             else {
                 //$updateresult = 'no';
             }
+
+            if($processdetail_updatetrue == true) {
+                $b = '4'; // departments_code
+                $c = '5'; // departments_code
+                $d = '43'; // work_code
+
+
+                $tpd_data = DB::table($this->table_process_date)
+                ->where('product_code', $s_product_code)
+                //->where([['product_code', $s_product_code], ['departments_code', '4']])
+                //->Where('departments_code', '4')
+                //->orWhere('departments_code', '5')
+                ->where(function ($query) use ($b, $c, $d) {
+                    $query->where('departments_code', $b)->orWhere('departments_code', $c)->orWhere('work_code', $d);
+                })
+                ->pluck('work_date');
+                $work_dateArray = $tpd_data->toArray();
+                //var_dump($work_dateArray);
+
+                //$allwdate_arr = $wdarr;
+                //$allwdate_arr[] = $f_receive_date;
+                //$allwdate_arr[] = $f_platemake_date;
+                //$allwdate_arr += $work_dateArray;
+                $allwdate_arr = $work_dateArray;
+                $allwdate_arr = array_filter($allwdate_arr);
+                if(count($allwdate_arr) > 0) {
+                    $wdmax = max($allwdate_arr);
+                    $wdmin = min($allwdate_arr);
+                    //echo "wdmax >> ".$wdmax."<br>\n";
+                    //echo "wdmin >> ".$wdmin."<br>\n";
+                    //var_dump($allwdate_arr);
+                    $receivedateresult = DB::table($this->table)
+                    ->where('product_code', $s_product_code)
+                    ->update(
+                        [
+                            'receive_date' => $wdmin,
+                            'updated_user' => $ipaddr,
+                            'updated_at' => $systemdate
+                        ]
+                    );
+
+
+        
+                }
+            }
+
 
 
 
