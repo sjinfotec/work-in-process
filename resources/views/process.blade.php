@@ -217,6 +217,14 @@ function create_calendar( $num = 1, $set = false, $after_due_date) {
 $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月～何か月分
 
 
+
+
+
+
+
+
+
+
 ?>
 @extends('layouts.main')
 @section('content')
@@ -293,7 +301,36 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 									<label for="comment" class="">コメント</label>
 									<textarea class="input_style2" id="comment" name="comment" rows="3" readonly>{{ $comment }}</textarea>
 								</div>
+								@php
+								// fileリンク
+								$file_msg = "";
+								$filelink_html = "";
+								$html_flink = "";
+								$result_view = false;
+								$directory = "public/".$product_code;
+								$dirfiles = Storage::files($directory);
+								foreach($dirfiles as $key => $filename) {
+									//$result = mb_strpos($filename, $product_code);
+									if($result = mb_strpos($filename, $product_code)) {
+										$url = Storage::url($filename);
+										$file_msg .= $result."<a href='".$url."' target='_blank'>".$filename."</a> ";
+										$file_msg .= "url -> ".$url." ++++ filename -> ".$filename." <br>\n";
+										$filelink_html .= $key.". <a href='".$url."' target='_blank'>".basename($filename)."</a>&emsp;";
+										//$filelink_html .= "<input type='checkbox' value='".$url."' name='delchk[]' id='delchk".$key."'>";
+										$result_view = true;
+									} 
+								}
 
+								if($result_view) {
+									$html_flink .= "<div class=''>\n";
+									$html_flink .= "<label for='platemake_date' class=''>ファイル</label>\n";
+									$html_flink .= $filelink_html;
+									$html_flink .= "</div>\n";
+
+								}
+
+								@endphp
+								{!! $html_flink !!}
 							</div>
 
 							<div id="confirm_area" class="mgt20">
@@ -361,6 +398,8 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 						
 
 							@if ($editzone === true)
+							<div id="posi_3" class="btn_shade transition2">&emsp;</div>
+							<div id="posi_1">
 								<div id="form_cnt">
 									<div>
 										<input type="radio" name="departments_code" value="1" id="departments_code1">
@@ -411,6 +450,7 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 								<div id="resultwp"></div>
 								<div id="resultbtn"></div>
 								<div id="motionbtn"></div>
+							</div>
 								
 							@endif
 
@@ -420,12 +460,12 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 							//echo $html_cal;
 						@endphp
 						@isset($result['e_message'])<div>message</div><div id="error"> {!! $result['e_message'] !!} </div>@endisset
-						<div>{!! $action_msg !!}</div>
+						<div style="padding-bottom: 200px;">{!! $action_msg !!}</div>
 
 
 
 					@elseif($select_html === 'Edit')
-						<form id="updateform" name="updateform" method="POST">
+						<form id="updateform" name="updateform" method="POST" enctype="multipart/form-data">
 							<div id="form2" class="mgt20">
 								<div class="form_style">
 									<label for="product_code" class="">伝票番号</label>
@@ -463,7 +503,34 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 									<label for="comment" class="">コメント</label>
 									<textarea class="input_style2" id="comment" name="comment" rows="3" >{{ $comment }}</textarea>
 								</div>
-
+								<!--
+								<div class="form_style">
+									<label class="">ファイル1</label>
+									<input type="file" class="input_style" name="upload_file[1]" id="btn_f1">
+									<label class="">ファイル2</label>
+									<input type="file" class="input_style" name="upload_file[2]" id="btn_f2">
+									<label class="">ファイル3</label>
+									<input type="file" class="input_style" name="upload_file[3]" accept='image/*' id="btn_f3">
+								</div>
+								-->
+								<div class="form_style">
+									<label class="">ファイル</label>
+									<input type="file" class="input_style3" name="upload_file[4]" onchange="previewImage(this,4);">
+									<div id="fileinfo_result4"></div>
+									Preview: Only the picture file<br><canvas id="preview4" width="100" height="10" style="max-width:200px;"></canvas>
+								</div>
+								<div class="form_style">
+									<label class="">ファイル</label>
+									<input type="file" class="input_style3" name="upload_file[5]" onchange="previewImage(this,5);">
+									<div id="fileinfo_result5"></div>
+									Preview: Only the picture file<br><canvas id="preview5" width="100" height="10" style="max-width:200px;"></canvas>
+								</div>
+								<div class="form_style">
+									<label class="">ファイル</label>
+									<input type="file" class="input_style3" name="upload_file[6]" onchange="previewImage(this,6);">
+									<div id="fileinfo_result6"></div>
+									Preview: Only the picture file<br><canvas id="preview6" width="100" height="10" style="max-width:200px;"></canvas>
+								</div>
 							</div>
 							<div id="form1" class="mgt20">
 								<input type="hidden" name="mode" id="mode" value="">
@@ -480,6 +547,60 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 								</div>
 								<button class="gc5 transition1 mgla" type="button" onClick="clickEvent('updateform','','','process_details_del','削除','delete','chkwrite')">削除</button>
 							</div>
+							@csrf
+						</form>
+
+						<form id="delfileform" name="delfileform" method="POST" enctype="multipart/form-data">
+							<input type="hidden" name="mode" id="mode" value="">
+							<input type="hidden" name="filename" id="filename" value="">
+							<input type="hidden" name="select_html" id="select_html" value="">
+							<input type="hidden" class="form_style1 w10e" name="s_product_code" id="s_product_code" value="{{ $product_code }}">
+							<input type="hidden" name="status" id="status" value="{{ $status }}">
+							<input type="hidden" name="updated_user" id="updated_user" value="{{ $updated_user }}">
+
+								@php
+								// fileリンク
+								$file_msg = "";
+								$filelink_html = "";
+								$html_flink = "";
+								$result_view = false;
+								$directory = "public/".$product_code;
+								$dirfiles = Storage::files($directory);
+								foreach($dirfiles as $key => $filename) {
+									//$result = mb_strpos($filename, $product_code);
+									if($result = mb_strpos($filename, $product_code)) {
+										$url = Storage::url($filename);
+										//$file_msg .= $result."<a href='".$url."' target='_blank'>".$filename."</a> ";
+										//$file_msg .= "url -> ".$url." ++++ filename -> ".$filename." <br>\n";
+										$filelink_html .= "<div>\n";
+										$filelink_html .= "<button type='button' class='style4 w_auto' onClick=\"clickEvent('delfileform','".$filename."','".basename($filename)."','process_file_del','削除','filedelete','chkwrite')\">削除</button>";
+										//$filelink_html .= "<input type='checkbox' class='input_style4' value='".$url."' name='delchk[]' id='delchk".$key."'> ".$key;
+										$filelink_html .= $key.". <a href='".$url."' target='_blank'>".basename($filename)."</a>&emsp;";
+										$filelink_html .= "</div>\n";
+										$result_view = true;
+									} 
+								}
+
+								if($result_view) {
+									$html_flink .= "<div id='form3' class='mgt20'>";
+									$html_flink .= "<label for='platemake_date' class=''>登録ファイル</label>\n";
+									$html_flink .= $filelink_html;
+									$html_flink .= "</div>";
+									$html_flink .= <<<EOF
+									<div id="tips_cnt" class="mgt10">
+										<ul class="lst2">
+											<li>登録ファイルを削除するときは該当ファイル名の左にある『削除』ボタンをクリックしてください。</li>
+											<li>連続して登録ファイルを削除することができます。</li>
+											<li>最後に『登録』ボタンをクリックしてください。</li>
+										</ul>
+									</div>
+
+									EOF;
+
+								}
+
+								@endphp
+								{!! $html_flink !!}
 							@csrf
 						</form>
 
@@ -513,6 +634,22 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 @section('jscript')
 
 <script type="text/javascript">
+
+//position: fixedやabsoluteをスクロールで動かすには。
+// const element = document.querySelector('.js-scroll-x')
+// window.addEventListener('scroll', () => {
+//   element.style.left = -window.pageXOffset + 'px'
+// });
+
+//複数に対応する場合
+//const elements = document.querySelectorAll('.js-scroll-x')
+//elements.forEach(element => {
+//	window.addEventListener('scroll', () => {
+//		element.style.left = -window.pageXOffset + 'px'
+//	})
+//});
+
+
 	function clickEvent(fname,val1,val2,cf,com1,md,smd) {
 	var fm = document.getElementById(fname);
 	//var tname = document.getElementsByName(val1);
@@ -593,6 +730,18 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 			if( result ) {
 				fm.mode.value = md;
 				//fm.motion.value = 'reload';
+				fm.action = '/process/update';
+				fm.submit();
+			}
+			else {
+				console.log('キャンセルがクリックされました');
+			}
+		}
+		else if(cf == 'process_file_del') {
+			var result = window.confirm('ファイル名 : ' + val2 + '\n\n' + com1 + ' します');
+			if( result ) {
+				fm.mode.value = md;
+				fm.filename.value = val1;
 				fm.action = '/process/update';
 				fm.submit();
 			}
@@ -700,6 +849,67 @@ $html_cal = create_calendar( 3, $cal_start_ym, $after_due_date);	//開始年月�
 			fm.submit();
 		}
 	}
+
+
+
+	function previewImage(obj,num)
+	{
+		var canvas = document.getElementById('preview'+num);
+		var ctx = canvas.getContext('2d');
+
+		var fileReader = new FileReader();
+		fileReader.onload = (function() {
+			//console.log('fileReader in 1');
+			//var canvas = document.getElementById('preview'+num);
+			//var ctx = canvas.getContext('2d');
+			var image = new Image();
+			image.src = fileReader.result;
+			image.onload = (function () {
+				canvas.width = image.width;
+				canvas.height = image.height;
+				ctx.drawImage(image, 0, 0);
+				console.log('width->'+ canvas.width + ': height->' + canvas.height);
+			});
+		});
+		//console.log('fileReader->'+obj.files[0]);
+		if(obj.files[0]) {
+			//var target = ev.target;
+			//var file = target.files[0];
+			var file = obj.files[0]
+			var type = file.type; // MIMEタイプ
+			var size = file.size; // ファイル容量（byte）
+			var limit = 10000; // byte, 10KB
+			var size_k = (size/1024).toFixed(1);	// 小数点の桁数を四捨五入でそろえる。
+			document.getElementById('fileinfo_result'+num).innerHTML = "ファイル容量（KB） : " + size_k + " KB";
+
+			// MIMEタイプの判定
+			if ( !type.match('image')) {
+				//alert('ファイルタイプ -> ' + type + '\n\nファイル容量(byte) -> ' + size);
+				//var canvas = document.getElementById('preview'+num);
+				//var ctx = canvas.getContext('2d');
+				console.log('ファイルタイプ変更によるclearするサイズ width->'+ canvas.width + ': height->' + canvas.height);
+				this.clearImage(canvas,ctx);
+				return;
+			}
+
+			fileReader.readAsDataURL(obj.files[0]);
+		}
+		else {
+			// ファイル選択ダイアログのキャンセルをクリックしたとき
+			//var canvas = document.getElementById('preview'+num);
+			//var ctx = canvas.getContext('2d');
+			console.log('clearするサイズ width->'+ canvas.width + ': height->' + canvas.height);
+			//ctx.clearRect(0, 0, canvas.width, canvas.height);
+			this.clearImage(canvas,ctx);
+			document.getElementById('fileinfo_result'+num).innerHTML = "";
+		}
+	}
+
+	function clearImage(canvas,ctx)
+	{
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+	}
+
 
 
 
@@ -874,6 +1084,14 @@ function appendWORKDATE(dataarr) {
 			for(i=0; i<elements.length; i++){
 				elements[i].style.opacity = 1;
 				elements[i].style.visibility = 'visible';
+			}
+		// チェックBOXの位置と背景用obj
+		let offset_h = document.getElementById('posi_1').offsetHeight;
+		//let client_h = document.getElementById('posi_1').clientHeight;
+		document.getElementById('posi_3').style.height = offset_h + 70 + 'px';
+		var posi_elements = document.getElementsByClassName('posi_class2');
+			for(i=0; i<posi_elements.length; i++){
+				posi_elements[i].style.bottom = offset_h + 5 + 'px';
 			}
 
 
