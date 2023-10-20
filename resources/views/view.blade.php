@@ -9,7 +9,8 @@ $ymd_after_due_date = "";
 $ymd_receive_date = "";
 $ymd_platemake_date = "";
 $action_msg .= "mode：".$mode."<br>\n";
-$select_html = !empty($_POST['select_html']) ? $_POST['select_html'] : "Default";
+//$select_html = !empty($_POST['select_html']) ? $_POST['select_html'] : "Default";
+$select_html = !empty($select_html) ? $select_html : "Default";
 
 //echo "select_html = ".$select_html."<br>\n";
 
