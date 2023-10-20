@@ -196,7 +196,8 @@ class ViewController extends Controller
         $quantity = !empty($_POST["quantity"]) ? $_POST['quantity'] : "";
         $comment = !empty($_POST["comment"]) ? $_POST['comment'] : "";
         $mode = !empty($_POST["mode"]) ? $_POST['mode'] : "";
-        $select_html = !empty($_POST["select_html"]) ? $_POST['select_html'] : "";
+        //$select_html = !empty($_POST["select_html"]) ? $_POST['select_html'] : "";
+        $select_html = !empty($request->select_html) ? $request->select_html : "";
         $action_msg = "";
         $result = "";
         $wd_result = "";
