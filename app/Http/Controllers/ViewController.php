@@ -463,7 +463,8 @@ class ViewController extends Controller
 
 
     public function SearchProcessDate($request) {
-        $s_product_code = !empty($_POST["s_product_code"]) ? $_POST['s_product_code'] : "";
+        //$s_product_code = !empty($_POST["s_product_code"]) ? $_POST['s_product_code'] : "";
+        $s_product_code = !empty($request->s_product_code) ? $request->s_product_code : "";
         $mode = !empty($_POST["mode"]) ? $_POST['mode'] : "";
         $action_msg = "";
         $result = "";
